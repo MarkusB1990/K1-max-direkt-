@@ -1,8 +1,7 @@
 package de.k1direkt.ui.screens
 
-import android.annotation.SuppressLint
-import android.webkit.WebView
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -70,15 +69,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.k1direkt.data.PrinterMode
 import de.k1direkt.data.formatBytes
+import de.k1direkt.printer.CameraAttempt
+import de.k1direkt.printer.MjpegStream
 import de.k1direkt.printer.PrintState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import de.k1direkt.ui.AppViewModel
 import de.k1direkt.ui.theme.K1Blue
 import de.k1direkt.ui.theme.K1Green
@@ -342,42 +347,58 @@ private fun ToolChip(label: String, icon: androidx.compose.ui.graphics.vector.Im
     )
 }
 
-/**
- * MJPEG-Stream (Creality-Kamera / mjpg-streamer). Probiert die Adressen der Reihe nach,
- * bis eine ein Bild liefert. WebView rendert multipart/x-mixed-replace nativ.
- */
-@SuppressLint("SetJavaScriptEnabled")
+/** Kamerabild: eigener MJPEG-Player mit Fehleranzeige pro probierter Adresse. */
 @Composable
 private fun MjpegView(urls: List<String>, modifier: Modifier) {
-    val list = urls.joinToString(",") { "'" + it.replace("'", "%27") + "'" }
-    val html = """
-        <html><head><meta name="viewport" content="width=device-width"></head>
-        <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;color:#bbb;font-family:sans-serif">
-        <img id="c" style="max-width:100%;max-height:100%;display:none"/>
-        <p id="m" style="padding:16px;text-align:center;font-size:14px">Suche Kamera …</p>
-        <script>
-          var u=[$list], i=0, img=document.getElementById('c'), m=document.getElementById('m');
-          function next(){
-            if(i>=u.length){ img.style.display='none'; m.style.display='block';
-              m.innerHTML='Kamera nicht gefunden.<br>Unter Einstellungen eine Kamera-URL eintragen.'; return; }
-            m.innerHTML='Verbinde mit<br>'+u[i]; img.src=u[i++];
-          }
-          img.onerror=next;
-          img.onload=function(){ img.style.display='block'; m.style.display='none'; };
-          // MJPEG: sobald das erste Bild Größe hat, gilt die Adresse als gefunden
-          setInterval(function(){ if(img.naturalWidth>0){ img.style.display='block'; m.style.display='none'; } }, 500);
-          next();
-        </script></body></html>
-    """.trimIndent()
-    AndroidView(
-        factory = { ctx ->
-            WebView(ctx).apply {
-                settings.javaScriptEnabled = true
-                setBackgroundColor(android.graphics.Color.BLACK)
-                loadDataWithBaseURL("http://localhost/", html, "text/html", "utf-8", null)
+    var frame by remember(urls) { mutableStateOf<ImageBitmap?>(null) }
+    var trying by remember(urls) { mutableStateOf<String?>(null) }
+    var active by remember(urls) { mutableStateOf<String?>(null) }
+    var failures by remember(urls) { mutableStateOf<List<CameraAttempt>?>(null) }
+    var retry by remember { mutableStateOf(0) }
+
+    LaunchedEffect(urls, retry) {
+        failures = null
+        val result = withContext(Dispatchers.IO) {
+            MjpegStream.run(
+                urls,
+                onTrying = { trying = it },
+                onConnected = { active = it },
+                onFrame = { bmp -> frame = bmp.asImageBitmap() },
+            )
+        }
+        failures = result
+    }
+
+    Box(modifier.background(Color.Black), contentAlignment = Alignment.Center) {
+        val f = frame
+        val fails = failures
+        when {
+            fails != null && f == null -> Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Kamera nicht erreichbar", style = MaterialTheme.typography.titleSmall, color = Color.White)
+                Spacer(Modifier.height(8.dp))
+                fails.forEach {
+                    Text("${it.url.removePrefix("http://")}\n→ ${it.error}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFBBBBBB), textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(4.dp))
+                }
+                TextButton(onClick = { retry++ }) { Text("Erneut versuchen") }
             }
-        },
-        onRelease = { it.destroy() },
-        modifier = modifier,
-    )
+            f != null -> {
+                Image(f, "Kamera", contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+                active?.let {
+                    Text(
+                        it.removePrefix("http://"),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.BottomStart).padding(8.dp)
+                            .clip(RoundedCornerShape(6.dp)).background(Color.Black.copy(alpha = 0.5f)).padding(horizontal = 6.dp, vertical = 2.dp),
+                    )
+                }
+            }
+            else -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(Modifier.size(28.dp), color = Color.White)
+                Spacer(Modifier.height(8.dp))
+                Text("Verbinde mit\n${trying?.removePrefix("http://") ?: "…"}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFBBBBBB), textAlign = TextAlign.Center)
+            }
+        }
+    }
 }
