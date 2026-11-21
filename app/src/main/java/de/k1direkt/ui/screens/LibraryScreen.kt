@@ -199,7 +199,8 @@ fun LibraryScreen(vm: AppViewModel, nav: Navigator) {
 /** Sicherheitsabfrage vor dem Senden an den Drucker. */
 @Composable
 fun PrintDialog(vm: AppViewModel, item: LibraryFile, onDismiss: () -> Unit) {
-    val autoStart = vm.settings.value.startAfterUpload
+    val settings by vm.settings.collectAsStateWithLifecycle()
+    val autoStart = settings.startAfterUpload
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Filled.PlayArrow, null) },
