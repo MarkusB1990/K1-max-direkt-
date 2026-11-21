@@ -38,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -163,6 +164,7 @@ fun SliceScreen(vm: AppViewModel, nav: Navigator, item: LibraryFile) {
                         value = params.infillPercent.toFloat(),
                         onValueChange = { params = params.copy(infillPercent = (it / 5).toInt() * 5) },
                         valueRange = 0f..100f,
+                        colors = SliderDefaults.colors(inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainerHighest),
                     )
                 }
 

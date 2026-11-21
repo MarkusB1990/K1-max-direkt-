@@ -189,6 +189,13 @@ fun <T> Segmented(options: List<T>, selected: T, label: (T) -> String, modifier:
                 onClick = { onSelect(o) },
                 shape = SegmentedButtonDefaults.itemShape(i, options.size),
                 icon = {},
+                colors = SegmentedButtonDefaults.colors(
+                    activeContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    activeContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    inactiveContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    activeBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    inactiveBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                ),
             ) { Text(label(o), maxLines = 1, overflow = TextOverflow.Ellipsis) }
         }
     }
