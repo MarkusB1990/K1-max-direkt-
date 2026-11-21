@@ -63,6 +63,10 @@ jobs:
           for k in ['nozzle_temperature','nozzle_temperature_initial_layer','hot_plate_temp','hot_plate_temp_initial_layer','textured_plate_temp','cool_plate_temp','eng_plate_temp','fan_max_speed','fan_min_speed','filament_type','filament_max_volumetric_speed','filament_density']:
               print('F', k, '=', repr(f.get(k)))
           PY
+      - name: K1-Max-Filamente (Kandidaten)
+        run: |
+          cd /tmp/orca-src/resources/profiles
+          grep -l '"Creality K1 Max (0.4 nozzle)"' Creality/filament/*.json | xargs -n1 basename | head -40
       - name: Testwürfel slicen
         run: |
           python3 - <<'PY'
@@ -76,29 +80,47 @@ jobs:
                   for i in t: o.write(struct.pack('<3f',*v[i]))
                   o.write(b'\0\0')
           PY
-          mkdir -p /tmp/out /tmp/datadir
           cd /tmp/squashfs-root
-          set +e
-          time timeout 300 ./AppRun --datadir /tmp/datadir --arrange 1 --orient 0 --slice 0 --export-statistics \
+          echo "### A: ohne Display"
+          mkdir -p /tmp/outA /tmp/dd
+          S=$(date +%s); timeout 300 ./AppRun --datadir /tmp/dd --arrange 1 --orient 0 --slice 0 --export-statistics \
             --load-settings "/tmp/prof/machine.json;/tmp/prof/process.json" --load-filaments "/tmp/prof/filament_PLA.json" \
-            --outputdir /tmp/out /tmp/cube.stl > /tmp/slice.log 2>&1
-          echo "EXIT=$?"
-          tail -40 /tmp/slice.log
-          ls -la /tmp/out
-          cat /tmp/out/result.json 2>/dev/null; echo
-          cat /tmp/out/*.statistics.json 2>/dev/null | head -60
-          G=$(ls /tmp/out/*.gcode 2>/dev/null | head -1)
-          if [ -n "$G" ]; then
-            echo "=== KOPF"; head -60 "$G"
-            echo "=== START"; grep -n -m5 "START_PRINT\|M190\|M109\|M104\|M140" "$G"
-            echo "=== ENDE"; tail -60 "$G" | grep -v "^; [a-z_]* = " | head -40
-            grep -E "^; (estimated printing time|total filament|filament used|model printing time|total estimated time)" "$G"
+            --outputdir /tmp/outA /tmp/cube.stl > /tmp/sliceA.log 2>&1; echo "EXIT=$? Dauer=$(( $(date +%s)-S ))s"
+          tail -15 /tmp/sliceA.log; ls -la /tmp/outA
+          echo "### result.json"; cat /tmp/outA/result.json; echo
+          echo "### statistics"; head -c 1500 /tmp/outA/*.statistics.json 2>/dev/null; echo
+          G=/tmp/outA/plate_1.gcode
+          if [ -f $G ]; then
+            echo "### KOPF"; head -40 $G
+            echo "### START"; grep -n -m8 "START_PRINT\|M190\|M109\|M104\|M140\|EXCLUDE_OBJECT_DEFINE\|thumbnail begin" $G
+            echo "### STATISTIK-KOMMENTARE"; grep -nE "^; (estimated printing time|total filament|filament used|model printing time|total estimated time|filament_settings_id|print_settings_id|printer_settings_id)" $G
+            echo "### ENDE"; grep -n "END_PRINT" $G | tail -2
           fi
-      - name: Mit xvfb (falls nötig)
-        if: always()
+      - name: Overrides testen (PETG, 0.12 mm, Stützen, Skalierung, Drehung)
         run: |
-          [ -n "$(ls /tmp/out/*.gcode 2>/dev/null)" ] && { echo "schon ok"; exit 0; }
-          [ -f /tmp/prof/machine.json ] || { echo "keine Profile"; exit 0; }
-          cd /tmp/squashfs-root
-          timeout 300 xvfb-run -a ./AppRun --datadir /tmp/datadir --arrange 1 --slice 0 --load-settings "/tmp/prof/machine.json;/tmp/prof/process.json" --load-filaments "/tmp/prof/filament_PLA.json" --outputdir /tmp/out /tmp/cube.stl 2>&1 | tail -30
-          ls -la /tmp/out
+          python3 - <<'PY'
+          import json
+          p=json.load(open('/tmp/prof/process.json'))
+          p.update({"layer_height":"0.12","sparse_infill_density":"35%","wall_loops":"3","enable_support":"1","support_type":"normal(auto)","support_on_build_plate_only":"1","brim_type":"outer_only","brim_width":"5","name":"K1 Direkt Test"})
+          json.dump(p,open('/tmp/p2.json','w'))
+          f=json.load(open('/tmp/prof/filament_PETG.json'))
+          for k in ["nozzle_temperature","nozzle_temperature_initial_layer"]: f[k]=["245"]
+          for k in ["hot_plate_temp","hot_plate_temp_initial_layer","textured_plate_temp","textured_plate_temp_initial_layer"]: f[k]=["80"]
+          json.dump(f,open('/tmp/f2.json','w'))
+          PY
+          cd /tmp/squashfs-root && mkdir -p /tmp/outB
+          timeout 300 ./AppRun --datadir /tmp/dd --arrange 1 --orient 0 --slice 0 --scale 1.5 --rotate 30 \
+            --load-settings "/tmp/prof/machine.json;/tmp/p2.json" --load-filaments "/tmp/f2.json" \
+            --outputdir /tmp/outB /tmp/cube.stl > /tmp/sliceB.log 2>&1; echo "EXIT=$?"
+          tail -10 /tmp/sliceB.log; cat /tmp/outB/result.json; echo
+          G=/tmp/outB/plate_1.gcode
+          [ -f $G ] && grep -nE "^START_PRINT|^; (layer_height|sparse_infill_density|enable_support|brim_width|nozzle_temperature|hot_plate_temp) =|^; (estimated printing time|total filament)" $G | head -20
+          [ -f $G ] && python3 -c "
+          import re
+          xs=[];ys=[]
+          for l in open('$G'):
+              m=re.match(r'G1 X([\d.]+) Y([\d.]+)',l)
+              if m: xs.append(float(m.group(1))); ys.append(float(m.group(2)))
+          print('XY-Bereich', min(xs),max(xs),min(ys),max(ys))"
+          echo "### Fehlerfall: zu großes Modell"
+          mkdir -p /tmp/outC; timeout 120 ./AppRun --datadir /tmp/dd --arrange 1 --slice 0 --scale 20 --load-settings "/tmp/prof/machine.json;/tmp/prof/process.json" --load-filaments "/tmp/prof/filament_PLA.json" --outputdir /tmp/outC /tmp/cube.stl > /tmp/sliceC.log 2>&1; echo "EXIT=$?"; tail -5 /tmp/sliceC.log; cat /tmp/outC/result.json 2>/dev/null

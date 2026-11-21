@@ -12,15 +12,18 @@ from pathlib import Path
 
 MACHINE = "Creality K1 Max (0.4 nozzle)"
 PROCESS_PATTERNS = [r"^0\.20mm Standard @Creality K1 ?Max", r"^0\.20mm Standard @Creality K1"]
-# Material → Suchmuster für Filamentnamen (erstes Muster mit Treffer gewinnt)
+# Material → (filament_type, bevorzugte Namensmuster). Gewählt wird ein Profil, das ausdrücklich
+# mit dem K1 Max kompatibel ist; sonst das generische Orca-Profil des Materials.
 FILAMENTS = {
-    "PLA": [r"^Creality Generic PLA @K1", r"^Creality Generic PLA", r"^Generic PLA @System", r"^Generic PLA"],
-    "PETG": [r"^Creality Generic PETG @K1", r"^Creality Generic PETG", r"^Generic PETG @System", r"^Generic PETG"],
-    "ABS": [r"^Creality Generic ABS @K1", r"^Creality Generic ABS", r"^Generic ABS @System", r"^Generic ABS"],
-    "ASA": [r"^Creality Generic ASA @K1", r"^Creality Generic ASA", r"^Generic ASA @System", r"^Generic ASA"],
-    "TPU": [r"^Creality Generic TPU @K1", r"^Creality Generic TPU", r"^Generic TPU @System", r"^Generic TPU"],
-    "PLA_CF": [r"^Creality Generic PLA-CF @K1", r"^Creality Generic PLA-CF", r"^Generic PLA-CF @System", r"^Generic PLA-CF"],
+    "PLA": ("PLA", [r"^Creality Generic PLA(?![- ])", r"^CR-PLA @", r"^Hyper PLA @"]),
+    "PETG": ("PETG", [r"^Creality Generic PETG", r"^CR-PETG @", r"^Hyper PETG @"]),
+    "ABS": ("ABS", [r"^Creality Generic ABS", r"^CR-ABS @", r"^Hyper ABS @"]),
+    "ASA": ("ASA", [r"^Creality Generic ASA", r"^CR-ASA @"]),
+    "TPU": ("TPU", [r"^Creality Generic TPU", r"^CR-TPU @"]),
+    "PLA_CF": ("PLA-CF", [r"^Creality Generic PLA-CF", r"^CR-PLA Carbon @", r"^Hyper PLA-CF @"]),
 }
+GENERIC_FALLBACK = {"PLA": "Generic PLA @System", "PETG": "Generic PETG @System", "ABS": "Generic ABS @System",
+                    "ASA": "Generic ASA @System", "TPU": "Generic TPU @System", "PLA_CF": "Generic PLA-CF @System"}
 
 
 def load_index(root: Path) -> dict[str, dict]:
@@ -64,6 +67,27 @@ def pick(index: dict[str, dict], kind: str, patterns: list[str], must_match_prin
     raise KeyError(f"Kein {kind}-Profil für {patterns}. Kandidaten: {[n for n in names if 'K1' in n][:40]}")
 
 
+def pick_filament(index: dict[str, dict], ftype: str, patterns: list[str]) -> str | None:
+    """Filament mit passendem Typ, das den K1 Max (ohne CFS) in compatible_printers führt."""
+    cands = []
+    for n, d in index.items():
+        if d.get("type") != "filament" or d.get("instantiation", "true") == "false":
+            continue
+        if MACHINE not in d.get("compatible_printers", []):
+            continue
+        try:
+            t = flatten(n, index).get("filament_type", [""])
+        except (KeyError, ValueError):
+            continue
+        if (t[0] if isinstance(t, list) and t else t) == ftype:
+            cands.append(n)
+    for pat in patterns:
+        hits = sorted(n for n in cands if re.search(pat, n))
+        if hits:
+            return hits[0]
+    return sorted(cands)[0] if cands else None
+
+
 def finalize(cfg: dict, kind: str, name: str) -> dict:
     cfg = dict(cfg)
     cfg["type"] = kind
@@ -91,11 +115,10 @@ def main():
     (out / "process.json").write_text(json.dumps(finalize(flatten(pname, index), "process", pname), indent=1, ensure_ascii=False))
     chosen.append(f"process: {pname}")
 
-    for mat, pats in FILAMENTS.items():
-        try:
-            fname = pick(index, "filament", pats, MACHINE)
-        except KeyError as e:
-            chosen.append(f"filament {mat}: FEHLT ({e})")
+    for mat, (ftype, pats) in FILAMENTS.items():
+        fname = pick_filament(index, ftype, pats) or GENERIC_FALLBACK[mat]
+        if fname not in index:
+            chosen.append(f"filament {mat}: FEHLT")
             continue
         cfg = finalize(flatten(fname, index), "filament", fname)
         (out / f"filament_{mat}.json").write_text(json.dumps(cfg, indent=1, ensure_ascii=False))
