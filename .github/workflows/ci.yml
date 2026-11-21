@@ -62,6 +62,7 @@ jobs:
           grep -i "x-print-time\|x-filament" /tmp/h1.txt
           grep -m1 "^START_PRINT" /tmp/pla.gcode | tee /dev/stderr | grep -q "EXTRUDER_TEMP=220 BED_TEMP=60"
           grep -q "OrcaSlicer" /tmp/pla.gcode
+          grep -E "^; filament_max_volumetric_speed = 20$" /tmp/pla.gcode
           echo "--- PETG, 0.12 mm, Stützen, Brim, schneller, skaliert + gedreht"
           curl -sf -o /tmp/petg.gcode -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F material=PETG -F nozzle_temp=245 -F bed_temp=80 \
             -F layer_height=0.12 -F support=buildplate -F brim=5 -F speed=130 -F scale=150 -F rotate=30 localhost:8090/slice

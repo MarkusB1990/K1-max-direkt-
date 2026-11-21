@@ -9,6 +9,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import de.k1direkt.K1Application
 import de.k1direkt.data.AppSettings
+import de.k1direkt.data.FileNames
 import de.k1direkt.data.Http
 import de.k1direkt.data.LibraryFile
 import de.k1direkt.data.SOURCE_SLICED
@@ -150,11 +151,9 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.IO) { Http.longClient.await(req) }.use { resp ->
                     if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
                     val body = resp.body ?: throw IOException("Leere Antwort")
-                    var name = URLUtil.guessFileName(
-                        url,
-                        contentDisposition ?: resp.header("Content-Disposition"),
-                        mimeType ?: resp.header("Content-Type"),
-                    )
+                    var name = FileNames.fromContentDisposition(contentDisposition)
+                        ?: FileNames.fromContentDisposition(resp.header("Content-Disposition"))
+                        ?: URLUtil.guessFileName(url, null, mimeType ?: resp.header("Content-Type"))
                     if (name.endsWith(".bin")) name = name.removeSuffix(".bin") + ".stl"
                     _transfer.value = TransferState(true, "Speichere $name", null)
                     val created = library.importStream(name, body.byteStream(), site?.displayName ?: "Web", referer ?: url)
@@ -316,6 +315,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             _status.value = PrinterStatus()
             _statusError.value = e.readable()
         }
+    }
+
+    /** Kamera-Adressen zum Durchprobieren (von Moonraker gemeldete zuerst). */
+    suspend fun webcamCandidates(): List<String> {
+        val s = settings.value
+        val reported = if (s.webcamUrl.isBlank() && liveConnection) {
+            runCatching { client()?.webcamUrls().orEmpty() }.getOrDefault(emptyList())
+        } else emptyList()
+        return s.webcamCandidates(reported)
     }
 
     fun loadRemoteFiles() = viewModelScope.launch {

@@ -40,14 +40,18 @@ data class AppSettings(
     val printerConfigured get() = printerHost.isNotBlank()
     val slicerConfigured get() = slicerUrl.isNotBlank()
 
-    /** Standard-Webcam-URL, falls keine eigene gesetzt ist. */
-    val effectiveWebcamUrl: String
-        get() = webcamUrl.ifBlank {
-            if (printerHost.isBlank()) "" else when (printerMode) {
-                PrinterMode.MOONRAKER -> "http://${hostOnly(printerHost)}:4408/webcam/?action=stream"
-                PrinterMode.CREALITY_STOCK -> "http://${hostOnly(printerHost)}:8080/?action=stream"
-            }
-        }
+    /** Kamera-Adressen, die nacheinander probiert werden (eigene URL hat Vorrang). */
+    fun webcamCandidates(reported: List<String> = emptyList()): List<String> {
+        if (webcamUrl.isNotBlank()) return listOf(webcamUrl.trim())
+        if (printerHost.isBlank()) return emptyList()
+        val h = hostOnly(printerHost)
+        return (reported + listOf(
+            "http://$h:8080/?action=stream",          // Creality-Kamera (Original-Firmware und nach Root)
+            "http://$h:4408/webcam/?action=stream",   // Fluidd (Helper Script)
+            "http://$h:4409/webcam/?action=stream",   // Mainsail
+            "http://$h/webcam/?action=stream",
+        )).distinct()
+    }
 }
 
 /** Entfernt Schema, Pfad und Port aus einer Eingabe wie "http://192.168.1.50:7125/". */

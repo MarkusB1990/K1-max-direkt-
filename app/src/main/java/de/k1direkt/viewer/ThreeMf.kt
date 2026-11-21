@@ -32,6 +32,18 @@ data class TmfPlate(
     val thumbnail: String?,
 )
 
+/** Druckeinstellungen, die im Projekt hinterlegt sind (Bambu/Orca: Metadata/project_settings.config). */
+data class ProjectSettings(
+    val layerHeight: Float? = null,
+    val wallLoops: Int? = null,
+    val infillPercent: Int? = null,
+    val supportEnabled: Boolean? = null,
+    val supportBuildPlateOnly: Boolean? = null,
+    val filamentType: String? = null,
+) {
+    val isEmpty get() = layerHeight == null && wallLoops == null && infillPercent == null && supportEnabled == null
+}
+
 /**
  * Liest 3MF-Dateien inklusive der Erweiterungen von Bambu Studio/OrcaSlicer/PrusaSlicer:
  * Objekte mit Komponenten in Unterdateien (3D/Objects/…), Transformationen, Teilenamen
@@ -40,6 +52,7 @@ data class TmfPlate(
 class ThreeMfProject internal constructor(
     val objects: List<TmfObject>,
     val plates: List<TmfPlate>,
+    val settings: ProjectSettings,
     private val items: List<BuildItem>,
     private val geometry: Map<String, Map<Int, ObjDef>>,
 ) {
@@ -153,7 +166,7 @@ class ThreeMfProject internal constructor(
             val settings = byLower["metadata/model_settings.config"]?.let { e -> zip.getInputStream(e).use { parseModelSettings(it) } }
             val names = rootNames + (settings?.objectNames ?: emptyMap())
 
-            val tmp = ThreeMfProject(emptyList(), emptyList(), rootItems, geometry)
+            val tmp = ThreeMfProject(emptyList(), emptyList(), ProjectSettings(), rootItems, geometry)
             val objects = rootItems.mapIndexed { idx, item ->
                 val (tris, box) = tmp.triangleCountAndBox(item)
                 TmfObject(
@@ -187,7 +200,28 @@ class ThreeMfProject internal constructor(
                     .firstOrNull { byLower.containsKey(it.lowercase(Locale.ROOT)) }
                 plates = listOf(TmfPlate(1, "Alle Teile", objects.map { it.itemIndex }, thumb))
             }
-            ThreeMfProject(objects, plates, rootItems, geometry)
+            val projectSettings = byLower["metadata/project_settings.config"]
+                ?.let { e -> runCatching { zip.getInputStream(e).use { parseProjectSettings(it.readBytes().toString(Charsets.UTF_8)) } }.getOrNull() }
+                ?: ProjectSettings()
+            ThreeMfProject(objects, plates, projectSettings, rootItems, geometry)
+        }
+
+        /** Bambu/Orca speichern die Prozess-Einstellungen als JSON; Werte sind Strings oder Listen von Strings. */
+        internal fun parseProjectSettings(json: String): ProjectSettings {
+            val o = org.json.JSONObject(json)
+            fun str(key: String): String? {
+                if (!o.has(key)) return null
+                val v = o.get(key)
+                return (if (v is org.json.JSONArray) v.optString(0) else v.toString()).trim().ifBlank { null }
+            }
+            return ProjectSettings(
+                layerHeight = str("layer_height")?.toFloatOrNull()?.takeIf { it in 0.04f..0.4f },
+                wallLoops = str("wall_loops")?.toIntOrNull()?.takeIf { it in 1..10 },
+                infillPercent = str("sparse_infill_density")?.removeSuffix("%")?.toFloatOrNull()?.toInt()?.coerceIn(0, 100),
+                supportEnabled = str("enable_support")?.let { it == "1" || it.equals("true", true) },
+                supportBuildPlateOnly = str("support_on_build_plate_only")?.let { it == "1" || it.equals("true", true) },
+                filamentType = str("filament_type"),
+            )
         }
 
         /** Liest ein Bild (z. B. Plattenvorschau) aus dem 3MF. */

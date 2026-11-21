@@ -1,6 +1,6 @@
 # Home-Assistant-App-Definition (Einstellungen → Apps). Docker-Nutzer ignorieren diese Datei.
 name: K1 Max Slicer
-version: "0.2.0"
+version: "0.3.0"
 slug: k1_slicer
 description: OrcaSlicer-Server mit den offiziellen Creality-K1-Max-Profilen für die Android-App „K1 Max Direkt“
 url: https://github.com/MarkusB1990/K1-max-direkt-

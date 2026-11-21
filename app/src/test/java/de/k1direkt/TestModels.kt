@@ -128,6 +128,11 @@ object TestModels {
             put("3D/3dmodel.model", root.toByteArray())
             put("3D/Objects/object_1.model", objectsFile.toByteArray())
             put("Metadata/model_settings.config", settings.toByteArray())
+            put(
+                "Metadata/project_settings.config",
+                """{"layer_height": "0.16", "wall_loops": "3", "sparse_infill_density": "20%", "enable_support": "1",
+                   "support_on_build_plate_only": "1", "filament_type": ["PETG"], "printer_model": "Bambu Lab P2S"}""".toByteArray(),
+            )
             plateThumbs.forEachIndexed { i, b -> if (b != null) put("Metadata/plate_${i + 1}.png", b) }
         }
         return out.toByteArray()

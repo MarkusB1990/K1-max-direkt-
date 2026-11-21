@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.ExpandLess
@@ -77,11 +78,11 @@ private enum class Quality(val label: String, val layer: Float) {
 private val LAYER_HEIGHTS = listOf(0.08f, 0.12f, 0.16f, 0.20f, 0.24f, 0.28f)
 
 @Composable
-fun SliceScreen(vm: AppViewModel, nav: Navigator, item: LibraryFile) {
+fun SliceScreen(vm: AppViewModel, nav: Navigator, item: LibraryFile, preset: SliceParams? = null, presetNote: String? = null) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val sliceState by vm.slice.collectAsStateWithLifecycle()
     val files by vm.library.files.collectAsStateWithLifecycle()
-    var params by remember { mutableStateOf(settings.defaultSlice) }
+    var params by remember { mutableStateOf(preset ?: settings.defaultSlice) }
     var saveDefault by remember { mutableStateOf(false) }
     var advanced by rememberSaveable { mutableStateOf(false) }
     val meshState = if (item.type != FileType.STEP) rememberMesh(item.file) else MeshState.Failed("Keine Vorschau für STEP-Dateien")
@@ -115,6 +116,9 @@ fun SliceScreen(vm: AppViewModel, nav: Navigator, item: LibraryFile) {
             }
 
             val done = sliceState as? SliceUiState.Done
+            if (done == null && presetNote != null) {
+                InfoCard("Werte aus dem Projekt übernommen", presetNote, icon = Icons.Filled.AutoAwesome)
+            }
             if (done != null) {
                 SliceDone(
                     result = done.result,

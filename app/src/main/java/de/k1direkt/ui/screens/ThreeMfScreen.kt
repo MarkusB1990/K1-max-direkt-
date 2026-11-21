@@ -50,7 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.k1direkt.data.LibraryFile
+import de.k1direkt.slicer.Material
+import de.k1direkt.slicer.SupportMode
 import de.k1direkt.ui.AppViewModel
 import de.k1direkt.ui.Navigator
 import de.k1direkt.ui.Overlay
@@ -92,8 +95,30 @@ fun ThreeMfScreen(vm: AppViewModel, nav: Navigator, item: LibraryFile) {
     val ready = state as? ProjectState.Ready
     var tab by rememberSaveable { mutableStateOf(TmfTab.PLATES) }
 
+    val defaults by vm.settings.collectAsStateWithLifecycle()
+
     fun slice(project: ThreeMfProject, indices: List<Int>, label: String) {
-        vm.extract3mf(item, project, indices, label) { stl -> nav.replace(Overlay.Slice(stl)) }
+        val ps = project.settings
+        val base = defaults.defaultSlice
+        val preset = if (ps.isEmpty) null else base.copy(
+            layerHeight = ps.layerHeight ?: base.layerHeight,
+            perimeters = ps.wallLoops ?: base.perimeters,
+            infillPercent = ps.infillPercent ?: base.infillPercent,
+            support = when {
+                ps.supportEnabled == false -> SupportMode.NONE
+                ps.supportEnabled == true && ps.supportBuildPlateOnly == true -> SupportMode.BUILDPLATE
+                ps.supportEnabled == true -> SupportMode.EVERYWHERE
+                else -> base.support
+            },
+            material = ps.filamentType?.let { t -> Material.entries.firstOrNull { it.label.equals(t, true) || it.name.equals(t, true) } } ?: base.material,
+            nozzleTemp = 0,
+            bedTemp = 0,
+        )
+        val note = preset?.let {
+            String.format(Locale.GERMANY, "%.2f mm · %d Wände · %d %% Füllung · Stützen %s",
+                it.layerHeight, it.perimeters, it.infillPercent, if (it.support == SupportMode.NONE) "aus" else it.support.label.lowercase(Locale.GERMANY))
+        }
+        vm.extract3mf(item, project, indices, label) { stl -> nav.replace(Overlay.Slice(stl, preset, note)) }
     }
 
     Column(Modifier.fillMaxSize()) {

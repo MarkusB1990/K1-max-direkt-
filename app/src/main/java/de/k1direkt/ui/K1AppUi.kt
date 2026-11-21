@@ -53,6 +53,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.k1direkt.data.LibraryFile
+import de.k1direkt.slicer.SliceParams
 import de.k1direkt.ui.screens.BrowserScreen
 import de.k1direkt.ui.screens.DiscoverScreen
 import de.k1direkt.ui.screens.LibraryScreen
@@ -73,7 +74,7 @@ enum class Tab(val label: String, val icon: ImageVector, val iconSelected: Image
 sealed interface Overlay {
     data class Browser(val url: String) : Overlay
     data class Viewer(val file: LibraryFile) : Overlay
-    data class Slice(val file: LibraryFile) : Overlay
+    data class Slice(val file: LibraryFile, val preset: SliceParams? = null, val presetNote: String? = null) : Overlay
     data class ThreeMf(val file: LibraryFile) : Overlay
 }
 
@@ -154,7 +155,7 @@ fun K1AppUi(vm: AppViewModel) {
                             when (overlay) {
                                 is Overlay.Browser -> BrowserScreen(vm, nav, overlay.url)
                                 is Overlay.Viewer -> ViewerScreen(vm, nav, overlay.file)
-                                is Overlay.Slice -> SliceScreen(vm, nav, overlay.file)
+                                is Overlay.Slice -> SliceScreen(vm, nav, overlay.file, overlay.preset, overlay.presetNote)
                                 is Overlay.ThreeMf -> ThreeMfScreen(vm, nav, overlay.file)
                             }
                         }

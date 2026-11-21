@@ -69,6 +69,17 @@ class ThreeMfTest {
     }
 
     @Test
+    fun liestProjektEinstellungen() {
+        val (_, p) = project()
+        assertEquals(0.16f, p.settings.layerHeight!!, 0.001f)
+        assertEquals(3, p.settings.wallLoops)
+        assertEquals(20, p.settings.infillPercent)
+        assertEquals(true, p.settings.supportEnabled)
+        assertEquals(true, p.settings.supportBuildPlateOnly)
+        assertEquals("PETG", p.settings.filamentType)
+    }
+
+    @Test
     fun vorschauLaedtGanzesProjekt() {
         val (f, p) = project()
         assertEquals(p.totalTriangles, MeshLoader.load(f).triangleCount)

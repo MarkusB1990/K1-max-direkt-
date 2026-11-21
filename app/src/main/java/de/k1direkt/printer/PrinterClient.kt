@@ -49,6 +49,8 @@ interface PrinterClient {
     suspend fun deleteFile(remoteName: String)
     suspend fun sendGcode(script: String)
     suspend fun emergencyStop()
+    /** Von der Firmware gemeldete Kamera-Stream-URLs (falls bekannt). */
+    suspend fun webcamUrls(): List<String> = emptyList()
     fun close() {}
 
     companion object {

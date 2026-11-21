@@ -66,7 +66,28 @@ class LibraryRepository(context: Context) {
     val files: StateFlow<List<LibraryFile>> = _files.asStateFlow()
 
     suspend fun refresh() = withContext(Dispatchers.IO) {
-        mutex.withLock { _files.value = readAll() }
+        mutex.withLock {
+            repairNames()
+            _files.value = readAll()
+        }
+    }
+
+    /** Benennt Dateien mit kaputtem Namen (z. B. "x.3mf;filename_=utf-8…") in "x.3mf" um. */
+    private fun repairNames() {
+        val index = readIndex()
+        var changed = false
+        dir.listFiles().orEmpty().filter { it.isFile && !it.name.startsWith(".") }.forEach { f ->
+            val fixed = FileNames.repair(f.name)
+            if (fixed != f.name) {
+                val target = uniqueFile(fixed)
+                if (f.renameTo(target)) {
+                    index.optJSONObject(f.name)?.let { index.put(target.name, it) }
+                    index.remove(f.name)
+                    changed = true
+                }
+            }
+        }
+        if (changed) indexFile.writeText(index.toString())
     }
 
     private fun readIndex(): JSONObject =
@@ -130,6 +151,7 @@ class LibraryRepository(context: Context) {
     ): List<File> = withContext(Dispatchers.IO) {
         mutex.withLock {
             val created = mutableListOf<File>()
+            @Suppress("NAME_SHADOWING") val fileName = FileNames.repair(fileName)
             if (fileName.lowercase(Locale.ROOT).endsWith(".zip")) {
                 ZipInputStream(input.buffered()).use { zip ->
                     while (true) {

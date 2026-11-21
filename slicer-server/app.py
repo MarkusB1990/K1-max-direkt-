@@ -27,6 +27,10 @@ PARALLEL = int(os.environ.get("SLICE_PARALLEL", "1"))
 ALLOWED = {".stl", ".3mf", ".obj", ".step", ".stp"}
 MATERIALS = {"PLA", "PETG", "ABS", "ASA", "TPU", "PLA_CF"}
 
+# Maximaler Volumenstrom (mm³/s) für das Hotend des K1 Max. Die generischen Orca-Profile begrenzen
+# z. B. PLA auf 12 mm³/s – das bremst große Drucke stark aus. Werte orientieren sich an Creality Print.
+MAX_FLOW = {"PLA": 20, "PLA_CF": 15, "PETG": 12, "ABS": 18, "ASA": 18, "TPU": 3.5}
+
 # Geschwindigkeiten im Prozessprofil, die mit dem Tempo-Faktor der App skaliert werden
 SPEED_KEYS = [
     "outer_wall_speed", "inner_wall_speed", "small_perimeter_speed", "sparse_infill_speed",
@@ -34,7 +38,7 @@ SPEED_KEYS = [
     "support_interface_speed",
 ]
 
-app = FastAPI(title="K1 Max Direkt Slicer", version="0.2.0")
+app = FastAPI(title="K1 Max Direkt Slicer", version="0.3.0")
 _sem = asyncio.Semaphore(PARALLEL)
 
 
@@ -118,6 +122,7 @@ def build_profiles(work: Path, *, lh: float, infill: int, perimeters: int, suppo
     for key in list(filament):
         if re.fullmatch(r".*_plate_temp(_initial_layer)?", key):
             filament[key] = [str(bed)]
+    filament["filament_max_volumetric_speed"] = [str(MAX_FLOW.get(material, 15))]
     filament["fan_max_speed"] = [str(fan)]
     filament["fan_min_speed"] = [str(fan)]
 

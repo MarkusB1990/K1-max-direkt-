@@ -195,12 +195,19 @@ fun PrinterScreen(vm: AppViewModel) {
                     Text("Kamera", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     Switch(checked = showCam, onCheckedChange = { showCam = it })
                 }
-                if (showCam && settings.effectiveWebcamUrl.isNotBlank()) {
-                    key(settings.effectiveWebcamUrl) {
-                        MjpegView(
-                            settings.effectiveWebcamUrl,
-                            Modifier.fillMaxWidth().aspectRatio(4f / 3f).padding(start = 12.dp, end = 12.dp, bottom = 12.dp).clip(MaterialTheme.shapes.medium),
-                        )
+                if (showCam) {
+                    var candidates by remember(settings.webcamUrl, settings.printerHost) { mutableStateOf<List<String>?>(null) }
+                    LaunchedEffect(settings.webcamUrl, settings.printerHost) { candidates = vm.webcamCandidates() }
+                    val list = candidates
+                    if (list == null) {
+                        Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                    } else if (list.isNotEmpty()) {
+                        key(list) {
+                            MjpegView(
+                                list,
+                                Modifier.fillMaxWidth().aspectRatio(4f / 3f).padding(start = 12.dp, end = 12.dp, bottom = 12.dp).clip(MaterialTheme.shapes.medium),
+                            )
+                        }
                     }
                 }
             }
@@ -335,21 +342,39 @@ private fun ToolChip(label: String, icon: androidx.compose.ui.graphics.vector.Im
     )
 }
 
-/** MJPEG-Stream (Crowsnest/mjpg-streamer) – WebView rendert multipart/x-mixed-replace nativ. */
+/**
+ * MJPEG-Stream (Creality-Kamera / mjpg-streamer). Probiert die Adressen der Reihe nach,
+ * bis eine ein Bild liefert. WebView rendert multipart/x-mixed-replace nativ.
+ */
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-private fun MjpegView(url: String, modifier: Modifier) {
+private fun MjpegView(urls: List<String>, modifier: Modifier) {
+    val list = urls.joinToString(",") { "'" + it.replace("'", "%27") + "'" }
     val html = """
-        <html><body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh">
-        <img src="$url" style="max-width:100%;max-height:100%" onerror="document.body.innerHTML='<p style=&quot;color:#bbb;font-family:sans-serif;padding:16px;text-align:center&quot;>Kamera nicht erreichbar.<br>URL in den Einstellungen prüfen.</p>'"/>
-        </body></html>
+        <html><head><meta name="viewport" content="width=device-width"></head>
+        <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;color:#bbb;font-family:sans-serif">
+        <img id="c" style="max-width:100%;max-height:100%;display:none"/>
+        <p id="m" style="padding:16px;text-align:center;font-size:14px">Suche Kamera …</p>
+        <script>
+          var u=[$list], i=0, img=document.getElementById('c'), m=document.getElementById('m');
+          function next(){
+            if(i>=u.length){ img.style.display='none'; m.style.display='block';
+              m.innerHTML='Kamera nicht gefunden.<br>Unter Einstellungen eine Kamera-URL eintragen.'; return; }
+            m.innerHTML='Verbinde mit<br>'+u[i]; img.src=u[i++];
+          }
+          img.onerror=next;
+          img.onload=function(){ img.style.display='block'; m.style.display='none'; };
+          // MJPEG: sobald das erste Bild Größe hat, gilt die Adresse als gefunden
+          setInterval(function(){ if(img.naturalWidth>0){ img.style.display='block'; m.style.display='none'; } }, 500);
+          next();
+        </script></body></html>
     """.trimIndent()
     AndroidView(
         factory = { ctx ->
             WebView(ctx).apply {
-                settings.javaScriptEnabled = false
+                settings.javaScriptEnabled = true
                 setBackgroundColor(android.graphics.Color.BLACK)
-                loadDataWithBaseURL(url, html, "text/html", "utf-8", null)
+                loadDataWithBaseURL("http://localhost/", html, "text/html", "utf-8", null)
             }
         },
         onRelease = { it.destroy() },

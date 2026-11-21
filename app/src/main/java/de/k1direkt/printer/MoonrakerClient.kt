@@ -109,6 +109,19 @@ class MoonrakerClient(host: String, port: Int, private val apiKey: String) : Pri
         }.sortedByDescending { it.modified }
     }
 
+    override suspend fun webcamUrls(): List<String> {
+        val list = get(url("server/webcams/list")).optJSONObject("result")?.optJSONArray("webcams") ?: return emptyList()
+        val host = base.host
+        return (0 until list.length()).mapNotNull { list.optJSONObject(it)?.optString("stream_url")?.ifBlank { null } }
+            .flatMap { u ->
+                when {
+                    u.startsWith("http") -> listOf(u)
+                    // relative Pfade gelten für die Weboberfläche (Fluidd 4408 / Mainsail 4409 / Port 80)
+                    else -> listOf(4408, 4409, 80).map { p -> "http://$host:$p/${u.trimStart('/')}" }
+                }
+            }
+    }
+
     override suspend fun deleteFile(remoteName: String) {
         val u = base.newBuilder().addPathSegments("server/files/gcodes").apply {
             remoteName.split('/').forEach { addPathSegment(it) }

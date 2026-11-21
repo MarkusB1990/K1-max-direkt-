@@ -79,7 +79,7 @@ fun SettingsScreen(vm: AppViewModel) {
                     } else {
                         Hint("Die Original-Firmware hat keine offizielle Schnittstelle – Hochladen kann scheitern. Zuverlässiger: Root + Moonraker.")
                     }
-                    Field("Kamera-URL (optional)", s.webcamUrl, s.effectiveWebcamUrl.ifBlank { "http://…/webcam/?action=stream" }) { s = s.copy(webcamUrl = it) }
+                    Field("Kamera-URL (leer = automatisch)", s.webcamUrl, "http://<drucker-ip>:8080/?action=stream") { s = s.copy(webcamUrl = it) }
                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                         Text("Nach dem Hochladen direkt drucken", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                         Switch(checked = s.startAfterUpload, onCheckedChange = { s = s.copy(startAfterUpload = it) })
