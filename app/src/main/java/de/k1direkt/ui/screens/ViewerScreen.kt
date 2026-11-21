@@ -20,7 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,8 +53,9 @@ sealed interface MeshState {
 
 @Composable
 fun rememberMesh(file: File): MeshState {
-    val state by produceState<MeshState>(MeshState.Loading, file) {
-        val loaded = withContext(Dispatchers.Default) {
+    var state by remember(file) { mutableStateOf<MeshState>(MeshState.Loading) }
+    LaunchedEffect(file) {
+        state = withContext(Dispatchers.Default) {
             try {
                 MeshState.Ready(MeshLoader.load(file))
             } catch (e: OutOfMemoryError) {
@@ -62,7 +64,6 @@ fun rememberMesh(file: File): MeshState {
                 MeshState.Failed(e.message ?: "Vorschau nicht möglich")
             }
         }
-        this.value = loaded
     }
     return state
 }

@@ -40,10 +40,13 @@ class ModelSurfaceView(context: Context) : GLSurfaceView(context) {
         requestRender()
     }
 
+    override fun performClick(): Boolean = super.performClick()
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         scaleDetector.onTouchEvent(event)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> { lastX = event.x; lastY = event.y }
+            MotionEvent.ACTION_UP -> performClick()
             MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> { lastX = event.x; lastY = event.y }
             MotionEvent.ACTION_MOVE -> if (event.pointerCount == 1 && !scaleDetector.isInProgress) {
                 renderer.yaw -= (event.x - lastX) * 0.4f

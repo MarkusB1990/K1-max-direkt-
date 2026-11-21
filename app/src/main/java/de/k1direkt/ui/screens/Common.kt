@@ -38,8 +38,8 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
 fun InfoCard(
     title: String,
     text: String,
-    icon: ImageVector = Icons.Filled.Info,
     modifier: Modifier = Modifier,
+    icon: ImageVector = Icons.Filled.Info,
     action: (@Composable () -> Unit)? = null,
 ) {
     Card(
