@@ -8,13 +8,13 @@ herunterladen, slicen und direkt an den Drucker schicken – alles vom Handy aus
 ![Logo](docs/screenshots/00_logo.png)
 
 
-| Entdecken | Bibliothek | 3D-Vorschau | Slicen |
+| Entdecken | Modelle | 3MF-Projekt | Slicen |
 |---|---|---|---|
-| ![](docs/screenshots/01_entdecken.png) | ![](docs/screenshots/02_bibliothek.png) | ![](docs/screenshots/03_3d_vorschau.png) | ![](docs/screenshots/04_slicen.png) |
+| ![](docs/screenshots/01_entdecken.png) | ![](docs/screenshots/02_bibliothek.png) | ![](docs/screenshots/08_3mf_platten.png) | ![](docs/screenshots/04_slicen.png) |
 
-| Fertig gesliced | Drucker | Einstellungen |
-|---|---|---|
-| ![](docs/screenshots/05_slicen_fertig.png) | ![](docs/screenshots/06_drucker.png) | ![](docs/screenshots/07_einstellungen.png) |
+| 3D-Vorschau | Fertig gesliced | Drucker | Einstellungen |
+|---|---|---|---|
+| ![](docs/screenshots/03_3d_vorschau.png) | ![](docs/screenshots/05_slicen_fertig.png) | ![](docs/screenshots/06_drucker.png) | ![](docs/screenshots/07_einstellungen.png) |
 
 *Die Bilder werden automatisch aus der echten App gerendert (Robolectric + Roborazzi, mit Beispieldaten).*
 
@@ -24,6 +24,7 @@ herunterladen, slicen und direkt an den Drucker schicken – alles vom Handy aus
 |---|---|
 | **Entdecken** | Gemeinsame Suche über Printables, Thingiverse, Cults3D und MyMiniFactory. Dazu ein eingebauter Browser für MakerWorld, Thangs, Creality Cloud und alle anderen Seiten. |
 | **Downloads** | Jeder Download im eingebauten Browser landet automatisch in der Bibliothek. ZIP-Archive werden entpackt (STL, 3MF, OBJ, STEP, G-Code). Logins bleiben gespeichert. |
+| **3MF-Projekte** | MakerWorld-/Bambu-/Orca-Projekte mit mehreren Platten oder Teilen: Platte (mit Vorschaubild) oder Einzelteil auswählen und nur das slicen. |
 | **Eigene Dateien** | Über „Eigene Datei“ selbst erstellte Modelle hochladen, oder aus jeder anderen App per **Teilen → K1 Max Direkt** bzw. **Öffnen mit**. |
 | **3D-Vorschau** | STL, 3MF und OBJ drehen und zoomen, mit Druckplatte 300 × 300 mm und Warnung, wenn das Modell nicht passt. |
 | **Slicen** | Mit OrcaSlicer: Material (PLA, PETG, ABS, ASA, TPU, PLA-CF), Schichthöhe, Füllung, Stützen, Brim, Wände, Geschwindigkeit, Skalierung, Drehung. Offizielle K1-Max-Profile. |
@@ -73,7 +74,11 @@ Voraussetzungen: Android Studio (Ladybug oder neuer) bzw. JDK 17 und das Android
 ./gradlew assembleDebug      # → app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Alternativ baut GitHub Actions das APK: **Actions → „APK bauen“ → Run workflow**. Das APK liegt danach als Artefakt bereit.
+GitHub Actions baut das APK bei jedem Push (Actions → „APK bauen“ → Artefakt *K1MaxDirekt-apk*).
+
+**Signatur:** Release-APKs werden mit einem festen Schlüssel (`app/k1direkt-release.p12`) signiert, damit Updates
+sich über die installierte App installieren lassen. Das Passwort liegt nur im GitHub-Secret `K1_SIGNING_PASSWORD`
+(Settings → Secrets and variables → Actions). Ohne Secret wird mit einem wechselnden Debug-Schlüssel signiert.
 
 ## Hinweise
 
