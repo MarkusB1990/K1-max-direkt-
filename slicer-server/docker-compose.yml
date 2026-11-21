@@ -1,0 +1,11 @@
+services:
+  k1-slicer:
+    build: .
+    container_name: k1-slicer
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      # Optional: Token setzen und in der App unter Einstellungen → Slicer eintragen
+      SLICER_TOKEN: ""
+      SLICE_PARALLEL: "1"
