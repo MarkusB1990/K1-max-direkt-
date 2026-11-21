@@ -11,7 +11,7 @@ enum class Material(val label: String, val nozzleTemp: Int, val bedTemp: Int, va
 
 enum class SupportMode(val label: String) {
     NONE("Keine"),
-    BUILDPLATE("Nur von der Platte"),
+    BUILDPLATE("Nur Platte"),
     EVERYWHERE("Überall"),
 }
 

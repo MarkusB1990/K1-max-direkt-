@@ -78,7 +78,7 @@ fun formatDate(millis: Long): String =
 
 fun formatTemp(current: Double?, target: Double?): String {
     if (current == null || current.isNaN()) return "–"
-    val c = "%.0f °C".format(current)
-    return if (target != null && !target.isNaN() && target > 0) "$c / ${"%.0f".format(target)} °C" else c
+    val c = "%.0f".format(current)
+    return if (target != null && !target.isNaN() && target > 0) "$c / ${"%.0f".format(target)} °C" else "$c °C"
 }
 
