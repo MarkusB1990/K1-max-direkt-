@@ -10,8 +10,9 @@ RUN apt-get update \
 WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /venv && /venv/bin/pip install --no-cache-dir -r requirements.txt
-COPY app.py .
+COPY app.py run.sh ./
 COPY profiles ./profiles
+RUN chmod +x /app/run.sh
 
 EXPOSE 8090
-CMD ["/venv/bin/uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8090"]
+CMD ["/app/run.sh"]

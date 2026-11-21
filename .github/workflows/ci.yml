@@ -37,6 +37,28 @@ jobs:
           python-version: "3.12"
       - run: pip install -r slicer-server/requirements.txt
       - run: python -c "import sys; sys.path.insert(0, 'slicer-server'); import app"
+      - name: Docker-Image bauen (wie Home Assistant)
+        run: docker build -t k1-slicer slicer-server
+      - name: Container starten und Testwürfel slicen
+        run: |
+          mkdir -p /tmp/k1data
+          echo '{"token":"test","parallel":1,"timeout":300}' > /tmp/k1data/options.json
+          docker run -d --name k1 -p 8090:8090 -v /tmp/k1data:/data k1-slicer
+          for i in $(seq 1 30); do curl -sf -H "Authorization: Bearer test" localhost:8090/health && break; sleep 1; done
+          python - <<'PY'
+          import struct
+          v=[(0,0,0),(20,0,0),(20,20,0),(0,20,0),(0,0,20),(20,0,20),(20,20,20),(0,20,20)]
+          f=[(0,2,1),(0,3,2),(4,5,6),(4,6,7),(0,1,5),(0,5,4),(1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,0,4),(3,4,7)]
+          with open('/tmp/cube.stl','wb') as o:
+              o.write(b'\0'*80); o.write(struct.pack('<I',len(f)))
+              for t in f:
+                  o.write(struct.pack('<3f',0,0,0))
+                  for i in t: o.write(struct.pack('<3f',*v[i]))
+                  o.write(b'\0\0')
+          PY
+          curl -sf -D - -o /tmp/cube.gcode -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F material=PETG localhost:8090/slice | grep -i "x-print-time"
+          grep -m1 START_PRINT /tmp/cube.gcode
+          docker logs k1 | head -3
 
   screenshots:
     runs-on: ubuntu-latest

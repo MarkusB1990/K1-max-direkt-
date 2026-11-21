@@ -1,0 +1,24 @@
+# Home-Assistant-App-Definition (Einstellungen → Apps). Docker-Nutzer ignorieren diese Datei.
+name: K1 Max Slicer
+version: "0.1.0"
+slug: k1_slicer
+description: PrusaSlicer-Server mit Creality-K1-Max-Profil für die Android-App „K1 Max Direkt“
+url: https://github.com/MarkusB1990/K1-max-direkt-
+arch:
+  - amd64
+  - aarch64
+startup: application
+boot: auto
+ports:
+  8090/tcp: 8090
+ports_description:
+  8090/tcp: Slicer-API (in der App unter Einstellungen → Slicer-Server eintragen)
+watchdog: tcp://[HOST]:[PORT:8090]
+options:
+  token: ""
+  parallel: 1
+  timeout: 900
+schema:
+  token: password?
+  parallel: int(1,4)
+  timeout: int(60,3600)
