@@ -3,6 +3,18 @@
 Android-App für den **Creality K1 Max**: Modelle von den großen 3D-Druck-Plattformen finden,
 herunterladen, slicen und direkt an den Drucker schicken – alles vom Handy aus.
 
+## Vorschau
+
+| Entdecken | Bibliothek | 3D-Vorschau | Slicen |
+|---|---|---|---|
+| ![](docs/screenshots/01_entdecken.png) | ![](docs/screenshots/02_bibliothek.png) | ![](docs/screenshots/03_3d_vorschau.png) | ![](docs/screenshots/04_slicen.png) |
+
+| Fertig gesliced | Drucker | Einstellungen |
+|---|---|---|
+| ![](docs/screenshots/05_slicen_fertig.png) | ![](docs/screenshots/06_drucker.png) | ![](docs/screenshots/07_einstellungen.png) |
+
+*Die Bilder werden automatisch aus der echten App gerendert (Robolectric + Roborazzi, mit Beispieldaten).*
+
 ## Funktionen
 
 | Bereich | Was geht |
