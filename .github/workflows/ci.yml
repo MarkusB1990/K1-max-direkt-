@@ -57,7 +57,8 @@ jobs:
                   o.write(b'\0\0')
           PY
           echo "--- PLA (Standard)"
-          curl -sf -D /tmp/h1.txt -o /tmp/pla.gcode -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F material=PLA -F nozzle_temp=220 -F bed_temp=60 localhost:8090/slice
+          code=$(curl -s -D /tmp/h1.txt -o /tmp/pla.gcode -w '%{http_code}' -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F material=PLA -F nozzle_temp=220 -F bed_temp=60 localhost:8090/slice)
+          if [ "$code" != "200" ]; then echo "HTTP $code"; cat /tmp/pla.gcode; echo; docker logs k1 | tail -20; exit 1; fi
           grep -i "x-print-time\|x-filament" /tmp/h1.txt
           grep -m1 "^START_PRINT" /tmp/pla.gcode | tee /dev/stderr | grep -q "EXTRUDER_TEMP=220 BED_TEMP=60"
           grep -q "OrcaSlicer" /tmp/pla.gcode

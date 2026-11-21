@@ -60,7 +60,8 @@ async def health():
     if not Path(ORCA_BIN).exists():
         raise HTTPException(status_code=500, detail=f"OrcaSlicer nicht gefunden: {ORCA_BIN}")
     _, out = await _run(ORCA_BIN, "--help", timeout=60)
-    first = next((l.strip().rstrip(":") for l in out.splitlines() if l.startswith("OrcaSlicer")), "OrcaSlicer")
+    m = re.search(r"OrcaSlicer-[\w.]+", out)
+    first = m.group(0) if m else "OrcaSlicer"
     profiles = (PROFILES / "profiles.txt").read_text().strip().splitlines() if (PROFILES / "profiles.txt").exists() else []
     return {"status": "ok", "slicer": first, "profiles": profiles}
 
