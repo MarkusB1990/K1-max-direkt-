@@ -2,64 +2,75 @@ name: OrcaSlicer erkunden
 
 on:
   push:
-    paths: [".github/workflows/orca-explore.yml"]
+    paths: [".github/workflows/orca-explore.yml", "slicer-server/orca_profiles.py"]
 
 jobs:
   explore:
     runs-on: ubuntu-latest
     container: ubuntu:24.04
     steps:
-      - name: Werkzeuge
-        run: apt-get update -qq && apt-get install -y -qq curl ca-certificates python3 file binutils > /dev/null
-      - name: Release finden
+      - uses: actions/checkout@v4
+      - name: Abhängigkeiten
         run: |
-          curl -s https://api.github.com/repos/OrcaSlicer/OrcaSlicer/releases?per_page=6 | python3 -c "
-          import json,sys
-          for r in json.load(sys.stdin):
-              print(r['tag_name'], r['prerelease'], r['published_at'])
-              for a in r['assets']:
-                  if 'Linux' in a['name']: print('   ', a['name'], a['size'])
-          "
-      - name: AppImage laden und entpacken
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl ca-certificates python3 file xvfb xauth \
+            libgtk-3-0t64 libwebkit2gtk-4.1-0 libgl1 libegl1 libglu1-mesa libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libsoup-3.0-0 > /dev/null
+      - name: OrcaSlicer 2.5.2
         run: |
-          URL=$(curl -s https://api.github.com/repos/OrcaSlicer/OrcaSlicer/releases/latest | python3 -c "
-          import json,sys
-          r=json.load(sys.stdin)
-          print([a['browser_download_url'] for a in r['assets'] if 'Linux_AppImage_Ubuntu2404_V' in a['name'] and 'aarch64' not in a['name']][0])")
-          echo "URL=$URL"
-          curl -sL -o /tmp/orca.AppImage "$URL" && chmod +x /tmp/orca.AppImage
-          cd /tmp && ./orca.AppImage --appimage-extract > /dev/null && ls squashfs-root | head -30
-          ls squashfs-root/bin squashfs-root/usr/bin 2>/dev/null | head; cat squashfs-root/AppRun | head -40
-      - name: Fehlende Bibliotheken
+          curl -sL -o /tmp/orca.AppImage https://github.com/OrcaSlicer/OrcaSlicer/releases/download/v2.5.2/OrcaSlicer_Linux_AppImage_Ubuntu2404_V2.5.2.AppImage
+          chmod +x /tmp/orca.AppImage && cd /tmp && ./orca.AppImage --appimage-extract > /dev/null
+          du -sh /tmp/squashfs-root; ls /tmp/squashfs-root/lib | head -5; ls /tmp/squashfs-root/lib | wc -l
+          file "/tmp/squashfs-root/resources/profiles/Creality.opc"
+          ls "/tmp/squashfs-root/resources/profiles/Creality" | head; ls "/tmp/squashfs-root/resources/profiles/Creality/machine" | grep -i k1 | head -20
+      - name: Profile zusammenführen
+        run: python3 slicer-server/orca_profiles.py /tmp/squashfs-root/resources/profiles /tmp/prof && ls -la /tmp/prof
+      - name: Profile ansehen
         run: |
-          cd /tmp/squashfs-root
-          B=$(ls bin/orca-slicer usr/bin/orca-slicer 2>/dev/null | head -1); echo "BIN=$B"; file $B
-          ldd $B | grep "not found" | sort -u || true
-      - name: Abhängigkeiten installieren
-        run: |
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libgtk-3-0t64 libwebkit2gtk-4.1-0 libgl1 libegl1 libglu1-mesa libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libsoup-3.0-0 xvfb locales > /dev/null
-          cd /tmp/squashfs-root; B=$(ls bin/orca-slicer usr/bin/orca-slicer 2>/dev/null | head -1)
-          echo "--- noch fehlend:"; ldd $B | grep "not found" | sort -u || true
-      - name: Hilfe
-        run: |
-          cd /tmp/squashfs-root
-          (./AppRun --help 2>&1 || true) | head -150
-          echo "--- ohne Display:"; (timeout 60 ./AppRun --help 2>&1 | tail -5) || echo "exit $?"
-      - name: K1-Max-Profile
-        run: |
-          cd /tmp/squashfs-root/resources/profiles
-          ls | head -80
-          echo "--- Creality-Index (K1 Max-Eintraege)"
           python3 - <<'PY'
           import json
-          idx=json.load(open('Creality.json'))
-          for k in ('machine_model_list','machine_list','process_list','filament_list'):
-              for e in idx.get(k,[]):
-                  if 'K1' in e['name'] and ('Max' in e['name'] or 'all' in e['name'].lower() or 'common' in e['name'].lower()) or e['name'].startswith('fdm') :
-                      print(k, '|', e['name'], '|', e['sub_path'])
+          m=json.load(open('/tmp/prof/machine.json')); p=json.load(open('/tmp/prof/process.json')); f=json.load(open('/tmp/prof/filament_PLA.json'))
+          for k in ['printable_area','printable_height','gcode_flavor','machine_start_gcode','machine_end_gcode','default_bed_type','curr_bed_type','thumbnails','thumbnails_format','use_relative_e_distances','layer_change_gcode','before_layer_change_gcode','printer_model','nozzle_diameter']:
+              print('M', k, '=', repr(m.get(k))[:300])
+          for k in ['layer_height','sparse_infill_density','wall_loops','enable_support','support_type','brim_type','brim_width','outer_wall_speed','inner_wall_speed','sparse_infill_speed','internal_solid_infill_speed','top_surface_speed','gap_infill_speed','support_speed','travel_speed','curr_bed_type']:
+              print('P', k, '=', repr(p.get(k)))
+          for k in ['nozzle_temperature','nozzle_temperature_initial_layer','hot_plate_temp','hot_plate_temp_initial_layer','textured_plate_temp','cool_plate_temp','eng_plate_temp','fan_max_speed','fan_min_speed','filament_type','filament_max_volumetric_speed','filament_density']:
+              print('F', k, '=', repr(f.get(k)))
           PY
-          echo "--- Maschine"; cat "Creality/machine/Creality K1 Max (0.4 nozzle).json" || true
-          echo "--- Prozess-Beispiele"; ls Creality/process | grep -i "k1max\|k1 max" | head -20
-          f=$(ls Creality/process | grep -i "0.20mm Standard" | grep -i "k1max\|k1 max" | head -1); echo "FILE=$f"; cat "Creality/process/$f"
-          echo "--- Filamente"; ls Creality/filament | grep -i "k1\|generic" | head -40
-          ls OrcaFilamentLibrary/filament 2>/dev/null | head -20
+      - name: Testwürfel slicen
+        run: |
+          python3 - <<'PY'
+          import struct
+          v=[(0,0,0),(20,0,0),(20,20,0),(0,20,0),(0,0,20),(20,0,20),(20,20,20),(0,20,20)]
+          f=[(0,2,1),(0,3,2),(4,5,6),(4,6,7),(0,1,5),(0,5,4),(1,2,6),(1,6,5),(2,3,7),(2,7,6),(3,0,4),(3,4,7)]
+          with open('/tmp/cube.stl','wb') as o:
+              o.write(b'\0'*80); o.write(struct.pack('<I',len(f)))
+              for t in f:
+                  o.write(struct.pack('<3f',0,0,0))
+                  for i in t: o.write(struct.pack('<3f',*v[i]))
+                  o.write(b'\0\0')
+          PY
+          mkdir -p /tmp/out /tmp/datadir
+          cd /tmp/squashfs-root
+          set +e
+          time timeout 300 ./AppRun --datadir /tmp/datadir --arrange 1 --orient 0 --slice 0 --export-statistics \
+            --load-settings "/tmp/prof/machine.json;/tmp/prof/process.json" --load-filaments "/tmp/prof/filament_PLA.json" \
+            --outputdir /tmp/out /tmp/cube.stl > /tmp/slice.log 2>&1
+          echo "EXIT=$?"
+          tail -40 /tmp/slice.log
+          ls -la /tmp/out
+          cat /tmp/out/result.json 2>/dev/null; echo
+          cat /tmp/out/*.statistics.json 2>/dev/null | head -60
+          G=$(ls /tmp/out/*.gcode 2>/dev/null | head -1)
+          if [ -n "$G" ]; then
+            echo "=== KOPF"; head -60 "$G"
+            echo "=== START"; grep -n -m5 "START_PRINT\|M190\|M109\|M104\|M140" "$G"
+            echo "=== ENDE"; tail -60 "$G" | grep -v "^; [a-z_]* = " | head -40
+            grep -E "^; (estimated printing time|total filament|filament used|model printing time|total estimated time)" "$G"
+          fi
+      - name: Mit xvfb (falls nötig)
+        if: always()
+        run: |
+          [ -n "$(ls /tmp/out/*.gcode 2>/dev/null)" ] && { echo "schon ok"; exit 0; }
+          cd /tmp/squashfs-root
+          timeout 300 xvfb-run -a ./AppRun --datadir /tmp/datadir --arrange 1 --slice 0 --load-settings "/tmp/prof/machine.json;/tmp/prof/process.json" --load-filaments "/tmp/prof/filament_PLA.json" --outputdir /tmp/out /tmp/cube.stl 2>&1 | tail -30
+          ls -la /tmp/out
