@@ -8,10 +8,11 @@ ENV DEBIAN_FRONTEND=noninteractive \
 
 # Laufzeit-Bibliotheken für OrcaSlicer (läuft ohne Bildschirm, braucht aber GTK/WebKit/GL-Libs)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends \
+ && apt-get install -y \
       ca-certificates curl git python3 python3-venv \
       libgtk-3-0t64 libwebkit2gtk-4.1-0 libgl1 libegl1 libglu1-mesa \
       libgstreamer1.0-0 libgstreamer-plugins-base1.0-0 libsoup-3.0-0 \
+      libsm6 libice6 libx11-6 libxext6 libxkbcommon0 libfontconfig1 libdbus-1-3 libsecret-1-0 \
  && rm -rf /var/lib/apt/lists/*
 
 # OrcaSlicer (offizielles AppImage, entpackt – kein FUSE nötig)
@@ -24,7 +25,7 @@ RUN set -eux; \
     curl -fsSL -o /tmp/orca.AppImage "https://github.com/OrcaSlicer/OrcaSlicer/releases/download/v${ORCA_VERSION}/${ASSET}"; \
     chmod +x /tmp/orca.AppImage; cd /tmp; ./orca.AppImage --appimage-extract > /dev/null; \
     mv /tmp/squashfs-root /opt/orca; rm /tmp/orca.AppImage; \
-    /opt/orca/AppRun --help | head -1
+    /opt/orca/AppRun --help 2>&1 | grep -m1 "OrcaSlicer-"   # bricht ab, falls Bibliotheken fehlen
 
 # Creality-Profile als lesbare JSON-Dateien aus dem Quellcode derselben Version
 RUN git clone -q --depth 1 --branch "v${ORCA_VERSION}" --filter=blob:none --sparse \
