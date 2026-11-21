@@ -24,6 +24,7 @@ import de.k1direkt.slicer.SlicerClient
 import de.k1direkt.sources.ModelSite
 import de.k1direkt.sources.ProviderOutcome
 import de.k1direkt.sources.UnifiedSearch
+import de.k1direkt.viewer.ThreeMfProject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,6 +41,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
+import java.io.File
 import java.io.IOException
 
 data class SearchState(
@@ -168,6 +170,32 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
         }
     }
+
+    /**
+     * Löst Platten/Teile aus einem 3MF-Projekt als eigene STL heraus (z. B. eine Platte eines
+     * MakerWorld-Projekts) und meldet die neue Bibliotheksdatei zurück.
+     */
+    fun extract3mf(item: LibraryFile, project: ThreeMfProject, itemIndices: List<Int>, label: String, onReady: (LibraryFile) -> Unit) =
+        viewModelScope.launch {
+            _transfer.value = TransferState(true, "Bereite „$label“ vor …", null)
+            try {
+                val tmp = withContext(Dispatchers.Default) {
+                    File.createTempFile("k1part", ".stl", getApplication<Application>().cacheDir).also { project.writeStl(itemIndices, it) }
+                }
+                val created = try {
+                    library.importStream("${item.name.substringBeforeLast('.')} – $label.stl", tmp.inputStream(), item.source, item.sourceUrl)
+                } finally {
+                    tmp.delete()
+                }
+                library.files.value.firstOrNull { it.file == created.firstOrNull() }?.let(onReady)
+            } catch (e: Exception) {
+                toast("Konnte „$label“ nicht vorbereiten: ${e.readable()}")
+            } catch (e: OutOfMemoryError) {
+                toast("Das Modell ist zu groß für dieses Handy")
+            } finally {
+                _transfer.value = TransferState()
+            }
+        }
 
     fun delete(item: LibraryFile) = viewModelScope.launch {
         library.delete(item)

@@ -1,7 +1,5 @@
 package de.k1direkt.viewer
 
-import org.xmlpull.v1.XmlPullParser
-import android.util.Xml
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.IOException
@@ -9,8 +7,6 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.Locale
-import java.util.zip.ZipFile
-import kotlin.math.sqrt
 
 /** Dreiecksnetz als "Triangle Soup": je Dreieck 3 Eckpunkte à xyz, plus Normale je Eckpunkt. */
 class Mesh(val positions: FloatArray, val normals: FloatArray) {
@@ -140,75 +136,13 @@ object MeshLoader {
 
     // ---------- 3MF ----------
 
-    private fun load3mf(file: File): Mesh {
-        val out = FloatList()
-        ZipFile(file).use { zip ->
-            val entries = zip.entries().toList().filter {
-                !it.isDirectory && it.name.lowercase(Locale.ROOT).endsWith(".model")
-            }
-            if (entries.isEmpty()) throw IOException("Keine 3D-Daten im 3MF gefunden")
-            for (entry in entries) {
-                zip.getInputStream(entry).use { parse3mfModel(it, out) }
-            }
-        }
-        val positions = out.toArray()
-        if (positions.isEmpty()) throw IOException("Das 3MF enthält keine Dreiecke")
-        return Mesh(positions, computeNormals(positions))
-    }
-
-    private fun parse3mfModel(input: InputStream, out: FloatList) {
-        val parser = Xml.newPullParser()
-        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
-        parser.setInput(input, null)
-        val verts = FloatList()
-        while (true) {
-            val ev = parser.next()
-            if (ev == XmlPullParser.END_DOCUMENT) break
-            if (ev != XmlPullParser.START_TAG) continue
-            when (parser.name.substringAfter(':')) {
-                "mesh" -> verts.clear()
-                "vertex" -> {
-                    verts.add(parser.getAttributeValue(null, "x")?.toFloatOrNull() ?: 0f)
-                    verts.add(parser.getAttributeValue(null, "y")?.toFloatOrNull() ?: 0f)
-                    verts.add(parser.getAttributeValue(null, "z")?.toFloatOrNull() ?: 0f)
-                }
-                "triangle" -> {
-                    if (out.size / 9 >= MAX_TRIANGLES) continue
-                    for (attr in arrayOf("v1", "v2", "v3")) {
-                        val i = parser.getAttributeValue(null, attr)?.toIntOrNull() ?: 0
-                        if (i * 3 + 2 < verts.size) {
-                            out.add(verts[i * 3]); out.add(verts[i * 3 + 1]); out.add(verts[i * 3 + 2])
-                        } else {
-                            out.add(0f); out.add(0f); out.add(0f)
-                        }
-                    }
-                }
-            }
-        }
-    }
+    private fun load3mf(file: File): Mesh = ThreeMfProject.read(file).mesh(maxTriangles = MAX_TRIANGLES)
 
     // ---------- Hilfsfunktionen ----------
 
     private val WS = Regex("\\s+")
 
-    private fun computeNormals(p: FloatArray): FloatArray {
-        val n = FloatArray(p.size)
-        var i = 0
-        while (i + 8 < p.size) {
-            val ux = p[i + 3] - p[i]; val uy = p[i + 4] - p[i + 1]; val uz = p[i + 5] - p[i + 2]
-            val vx = p[i + 6] - p[i]; val vy = p[i + 7] - p[i + 1]; val vz = p[i + 8] - p[i + 2]
-            var nx = uy * vz - uz * vy
-            var ny = uz * vx - ux * vz
-            var nz = ux * vy - uy * vx
-            val l = sqrt(nx * nx + ny * ny + nz * nz)
-            if (l > 0f) { nx /= l; ny /= l; nz /= l }
-            for (k in 0..2) {
-                n[i + k * 3] = nx; n[i + k * 3 + 1] = ny; n[i + k * 3 + 2] = nz
-            }
-            i += 9
-        }
-        return n
-    }
+    private fun computeNormals(p: FloatArray): FloatArray = MeshMath.normals(p)
 }
 
 /** Wachsende Float-Liste ohne Boxing. */

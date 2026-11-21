@@ -5,17 +5,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import de.k1direkt.data.FileType
 import de.k1direkt.data.LibraryFile
 import de.k1direkt.viewer.Mesh
 import de.k1direkt.viewer.MeshLoader
@@ -114,46 +115,44 @@ private fun GlView(mesh: Mesh, modifier: Modifier) {
     AndroidView(factory = { view }, modifier = modifier)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ViewerScreen(vm: AppViewModel, nav: Navigator, item: LibraryFile) {
     val state = rememberMesh(item.file)
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            navigationIcon = { IconButton(onClick = { nav.back() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück") } },
-            title = {
-                Column {
-                    Text(item.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    if (state is MeshState.Ready) {
-                        Text(
-                            "${state.mesh.dimensionText()} · ${"%,d".format(state.mesh.triangleCount)} Dreiecke",
-                            style = MaterialTheme.typography.bodySmall,
-                        )
-                    }
-                }
-            },
+        OverlayTopBar(
+            title = item.name,
+            subtitle = (state as? MeshState.Ready)?.mesh?.let { "${it.dimensionText()} · ${"%,d".format(it.triangleCount)} Dreiecke" } ?: item.type.label,
+            onBack = { nav.back() },
         )
-        ModelPreview(state, Modifier.weight(1f).fillMaxWidth())
-        if (state is MeshState.Ready && !state.mesh.fitsK1Max()) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            ModelPreview(state, Modifier.fillMaxSize())
             Text(
-                "Achtung: Das Modell ist größer als der Bauraum des K1 Max (300 × 300 × 300 mm). Beim Slicen skalieren!",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                "Ein Finger drehen · zwei Finger zoomen",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp),
             )
         }
-        Text(
-            "Ein Finger: drehen · Zwei Finger: zoomen",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp),
-        )
+        if (state is MeshState.Ready && !state.mesh.fitsK1Max()) {
+            InfoCard(
+                "Größer als der Bauraum",
+                "Das Modell passt nicht in 300 × 300 × 300 mm. Beim Slicen kleiner skalieren.",
+                icon = Icons.Filled.Warning,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = ScreenPadding, vertical = 8.dp),
+            )
+        }
         Button(
-            onClick = { nav.back(); nav.open(Overlay.Slice(item)) },
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            onClick = {
+                nav.back()
+                nav.open(if (item.type == FileType.THREE_MF) Overlay.ThreeMf(item) else Overlay.Slice(item))
+            },
+            modifier = Modifier.fillMaxWidth().padding(ScreenPadding).height(56.dp),
+            shape = MaterialTheme.shapes.large,
         ) {
             Icon(Icons.Filled.Layers, null)
-            Text("  Slicen")
+            Spacer(Modifier.width(8.dp))
+            Text("Slicen", style = MaterialTheme.typography.titleMedium)
         }
     }
 }

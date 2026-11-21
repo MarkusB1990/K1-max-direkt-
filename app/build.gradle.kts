@@ -13,16 +13,31 @@ android {
         applicationId = "de.k1direkt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.2.0"
+    }
+
+    // Fester Signaturschlüssel: Die Schlüsseldatei liegt (passwortgeschützt) im Repo,
+    // das Passwort kommt aus dem GitHub-Secret K1_SIGNING_PASSWORD.
+    // Ohne Passwort (z. B. lokal) wird mit dem Debug-Schlüssel signiert.
+    val signingPassword = System.getenv("K1_SIGNING_PASSWORD")?.takeIf { it.isNotBlank() }
+    signingConfigs {
+        if (signingPassword != null) {
+            create("release") {
+                storeFile = file("k1direkt-release.p12")
+                storeType = "PKCS12"
+                storePassword = signingPassword
+                keyAlias = "k1direkt"
+                keyPassword = signingPassword
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Für ein installierbares Release-APK ohne eigenen Keystore wird der Debug-Schlüssel genutzt.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (signingPassword != null) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
     compileOptions {

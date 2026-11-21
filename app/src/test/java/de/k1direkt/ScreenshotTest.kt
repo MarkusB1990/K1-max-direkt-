@@ -3,6 +3,7 @@ package de.k1direkt
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -31,13 +32,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.RectF
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * Erzeugt Vorschaubilder der App mit Beispieldaten (ohne echten Drucker / Server).
@@ -70,10 +70,10 @@ class ScreenshotTest {
             )
             val lib = app.library
             lib.importStream("Kabelhalter_PETG_0.20mm.gcode", gcode(), "Gesliced", null)
-            lib.importStream("Schreibtisch-Organizer.3mf", ByteArrayInputStream(ByteArray(2048)), "MakerWorld", "https://makerworld.com/")
-            lib.importStream("Wandhalter_Kopfhörer.stl", ByteArrayInputStream(vaseStl(segments = 6, height = 40f)), "Eigene Datei", null)
-            lib.importStream("Benchy.stl", ByteArrayInputStream(vaseStl(segments = 24, height = 48f)), "Thingiverse", "https://www.thingiverse.com/thing:763622")
-            lib.importStream("Vase_gedreht.stl", ByteArrayInputStream(vaseStl()), "Printables", "https://www.printables.com/model/1")
+            lib.importStream("Schreibtisch-Set.3mf", ByteArrayInputStream(TestModels.bambuProject(listOf(thumb(0xFFFF7A1A.toInt()), thumb(0xFF5B9BFF.toInt())))), "MakerWorld", "https://makerworld.com/")
+            lib.importStream("Wandhalter_Kopfhörer.stl", ByteArrayInputStream(TestModels.stl(TestModels.boxTriangles(60f, 20f, 40f))), "Eigene Datei", null)
+            lib.importStream("Benchy.stl", ByteArrayInputStream(TestModels.stl(TestModels.vaseTriangles(24, 20, 48f))), "Thingiverse", "https://www.thingiverse.com/thing:763622")
+            lib.importStream("Vase_gedreht.stl", ByteArrayInputStream(TestModels.stl(TestModels.vaseTriangles())), "Printables", "https://www.printables.com/model/1")
         }
         compose.waitUntil(5_000) { vm.settings.value.printerHost.isNotEmpty() && app.library.files.value.size == 5 }
         compose.waitForIdle()
@@ -116,13 +116,13 @@ class ScreenshotTest {
 
     @Test
     fun bibliothek() {
-        compose.onNodeWithText("Bibliothek").performClick()
+        openTab("Modelle")
         shot("02_bibliothek")
     }
 
     @Test
     fun vorschau() {
-        compose.onNodeWithText("Bibliothek").performClick()
+        openTab("Modelle")
         compose.onNodeWithText("Vase_gedreht.stl").performClick()
         waitForText("Dreiecke")
         shot("03_3d_vorschau")
@@ -130,21 +130,34 @@ class ScreenshotTest {
 
     @Test
     fun slicen() {
-        compose.onNodeWithText("Bibliothek").performClick()
+        openTab("Modelle")
         compose.onAllNodesWithContentDescription("Slicen")[0].performClick()
-        waitForText("Größe:")
+        waitForText(" × ")
         shot("04_slicen")
     }
 
     @Test
     fun sliceFertig() {
-        compose.onNodeWithText("Bibliothek").performClick()
+        openTab("Modelle")
         compose.onAllNodesWithContentDescription("Slicen")[0].performClick()
         compose.waitForIdle()
         val gcode = app.library.files.value.first { it.name.endsWith(".gcode") }.file
-        waitForText("Größe:")
+        waitForText(" × ")
         vm.showDemoData(slice = SliceUiState.Done(SliceResult(gcode, "2h 14m 37s", 18.42, 54.9)))
         shot("05_slicen_fertig")
+    }
+
+    @Test
+    fun dreiMfPlatten() {
+        openTab("Modelle")
+        compose.onNodeWithText("Schreibtisch-Set.3mf").performClick()
+        waitForText("Platten · 2")
+        Thread.sleep(1500)
+        compose.waitForIdle()
+        shot("08_3mf_platten")
+        compose.onNodeWithText("Einzelteile · 3").performClick()
+        waitForText("Deckel")
+        shot("09_3mf_einzelteile")
     }
 
     @Test
@@ -165,13 +178,13 @@ class ScreenshotTest {
                 RemoteFile("Benchy_PLA_0.16mm.gcode", 3_100_000, System.currentTimeMillis() - 3 * 86_400_000),
             ),
         )
-        compose.onNodeWithText("Drucker").performClick()
+        openTab("Drucker")
         shot("06_drucker")
     }
 
     @Test
     fun einstellungen() {
-        compose.onNodeWithText("Einstellungen").performClick()
+        openTab("Einstellungen")
         shot("07_einstellungen")
     }
 
@@ -185,33 +198,19 @@ class ScreenshotTest {
             .repeat(2000).toByteArray()
     )
 
-    /** Gedrehte, gewellte Vase als binäre STL. */
-    private fun vaseStl(segments: Int = 72, rings: Int = 60, height: Float = 120f): ByteArray {
-        fun point(i: Int, j: Int): FloatArray {
-            val z = height * j / rings
-            val t = 2 * PI * i / segments + z / height * 1.4
-            val base = 28f + 10f * sin(z / height * PI * 1.2).toFloat()
-            val r = base * (1f + 0.08f * cos(6 * (2 * PI * i / segments)).toFloat())
-            return floatArrayOf((r * cos(t)).toFloat(), (r * sin(t)).toFloat(), z)
-        }
-        val tris = ArrayList<Array<FloatArray>>()
-        for (j in 0 until rings) for (i in 0 until segments) {
-            val a = point(i, j); val b = point((i + 1) % segments, j)
-            val c = point((i + 1) % segments, j + 1); val d = point(i, j + 1)
-            tris += arrayOf(a, b, c); tris += arrayOf(a, c, d)
-        }
-        val center = floatArrayOf(0f, 0f, 0f)
-        for (i in 0 until segments) tris += arrayOf(center, point((i + 1) % segments, 0), point(i, 0))
-        val out = ByteArrayOutputStream()
-        out.write(ByteArray(80))
-        val buf = ByteBuffer.allocate(4 + tris.size * 50).order(ByteOrder.LITTLE_ENDIAN)
-        buf.putInt(tris.size)
-        for (t in tris) {
-            repeat(3) { buf.putFloat(0f) }
-            for (v in t) { buf.putFloat(v[0]); buf.putFloat(v[1]); buf.putFloat(v[2]) }
-            buf.putShort(0)
-        }
-        out.write(buf.array())
-        return out.toByteArray()
+    /** Einfaches Plattenvorschaubild (wie Bambu/Orca es ins 3MF legt). */
+    private fun thumb(color: Int): ByteArray {
+        val bmp = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.drawColor(0xFF2A2E36.toInt())
+        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply { this.color = color }
+        c.drawRoundRect(RectF(70f, 40f, 150f, 220f), 30f, 30f, p)
+        c.drawRect(170f, 150f, 220f, 220f, p.apply { alpha = 170 })
+        return ByteArrayOutputStream().also { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+    }
+
+    private fun openTab(label: String) {
+        compose.onAllNodesWithText(label)[0].performClick()
+        compose.waitForIdle()
     }
 }

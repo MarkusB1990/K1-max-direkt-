@@ -18,14 +18,22 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
       - name: APK bauen
-        run: ./gradlew --no-daemon assembleRelease
+        env:
+          K1_SIGNING_PASSWORD: ${{ secrets.K1_SIGNING_PASSWORD }}
+        run: |
+          if [ -z "$K1_SIGNING_PASSWORD" ]; then
+            echo "::warning::Secret K1_SIGNING_PASSWORD fehlt – APK wird mit wechselndem Debug-Schlüssel signiert."
+          fi
+          ./gradlew --no-daemon assembleRelease
       - name: APK benennen
         run: |
           VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           mkdir -p out
           cp app/build/outputs/apk/release/app-release.apk "out/K1MaxDirekt-$VERSION.apk"
           ls -la out
-          "$ANDROID_HOME"/build-tools/*/aapt2 dump badging out/*.apk 2>/dev/null | grep -E "^package|application-icon-160|sdkVersion" || true
+          APKSIGNER=$(ls "$ANDROID_HOME"/build-tools/*/apksigner | tail -1)
+          echo "Signatur (SHA-256 des Zertifikats):"
+          "$APKSIGNER" verify --print-certs out/*.apk | grep -E "SHA-256|DN"
       - uses: actions/upload-artifact@v4
         with:
           name: K1MaxDirekt-apk

@@ -20,13 +20,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import de.k1direkt.sources.ModelSite
@@ -47,7 +42,6 @@ import de.k1direkt.ui.Navigator
  * Eingebauter Browser für alle Modellseiten. Login-Cookies bleiben erhalten,
  * und jeder Datei-Download wird abgefangen und in der Bibliothek gespeichert (ZIPs werden entpackt).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun BrowserScreen(vm: AppViewModel, nav: Navigator, startUrl: String) {
@@ -120,34 +114,20 @@ fun BrowserScreen(vm: AppViewModel, nav: Navigator, startUrl: String) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            navigationIcon = {
-                IconButton(onClick = { nav.back() }) { Icon(Icons.Filled.Close, "Schließen") }
-            },
-            title = {
-                Column {
-                    Text(
-                        ModelSite.forUrl(currentUrl)?.displayName ?: Uri.parse(currentUrl).host.orEmpty(),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        title.ifBlank { currentUrl },
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-            },
-            actions = {
-                IconButton(onClick = { webView.goBack() }, enabled = canGoBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
-                }
-                IconButton(onClick = { webView.reload() }) { Icon(Icons.Filled.Refresh, "Neu laden") }
-                IconButton(onClick = {
-                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(currentUrl))) }
-                }) { Icon(Icons.AutoMirrored.Filled.OpenInNew, "Im externen Browser öffnen") }
-            },
-        )
+        OverlayTopBar(
+            title = ModelSite.forUrl(currentUrl)?.displayName ?: Uri.parse(currentUrl).host.orEmpty(),
+            subtitle = title.ifBlank { currentUrl },
+            onBack = { nav.back() },
+            backIcon = Icons.Filled.Close,
+        ) {
+            IconButton(onClick = { webView.goBack() }, enabled = canGoBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Zurück")
+            }
+            IconButton(onClick = { webView.reload() }) { Icon(Icons.Filled.Refresh, "Neu laden") }
+            IconButton(onClick = {
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(currentUrl))) }
+            }) { Icon(Icons.AutoMirrored.Filled.OpenInNew, "Im externen Browser öffnen") }
+        }
         if (progress in 0.01f..0.99f) {
             LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth().height(2.dp))
         }
