@@ -3,6 +3,7 @@ package de.k1direkt.sources
 import de.k1direkt.data.AppSettings
 import de.k1direkt.data.Http
 import de.k1direkt.data.getText
+import de.k1direkt.data.readable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withTimeout
@@ -50,7 +51,7 @@ object UnifiedSearch {
                     try {
                         ProviderOutcome(p.site, results = withTimeout(25_000) { p.search(query, page, settings) })
                     } catch (e: Exception) {
-                        ProviderOutcome(p.site, error = e.message ?: e.javaClass.simpleName)
+                        ProviderOutcome(p.site, error = e.readable())
                     }
                 }
             }

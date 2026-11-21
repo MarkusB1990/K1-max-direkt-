@@ -13,6 +13,7 @@ import de.k1direkt.data.Http
 import de.k1direkt.data.LibraryFile
 import de.k1direkt.data.SOURCE_SLICED
 import de.k1direkt.data.await
+import de.k1direkt.data.readable
 import de.k1direkt.printer.PrintState
 import de.k1direkt.printer.PrinterClient
 import de.k1direkt.printer.PrinterStatus
@@ -23,6 +24,7 @@ import de.k1direkt.slicer.SlicerClient
 import de.k1direkt.sources.ModelSite
 import de.k1direkt.sources.ProviderOutcome
 import de.k1direkt.sources.UnifiedSearch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -36,6 +38,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.IOException
 
@@ -115,7 +118,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 count += library.importUri(uri).size
             } catch (e: Exception) {
-                toast("Import fehlgeschlagen: ${e.message}")
+                toast("Import fehlgeschlagen: ${e.readable()}")
             }
         }
         if (count > 0) toast(if (count == 1) "1 Datei hinzugefügt" else "$count Dateien hinzugefügt")
@@ -142,7 +145,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     CookieManager.getInstance().getCookie(url)?.let { header("Cookie", it) }
                     referer?.let { header("Referer", it) }
                 }.build()
-                Http.longClient.await(req).use { resp ->
+                withContext(Dispatchers.IO) { Http.longClient.await(req) }.use { resp ->
                     if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
                     val body = resp.body ?: throw IOException("Leere Antwort")
                     var name = URLUtil.guessFileName(
@@ -159,7 +162,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 }
             } catch (e: Exception) {
-                toast("Download fehlgeschlagen: ${e.message}")
+                toast("Download fehlgeschlagen: ${e.readable()}")
             } finally {
                 _transfer.value = TransferState()
             }
@@ -192,7 +195,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val v = SlicerClient(s.slicerUrl, s.slicerToken).health()
             toast("Slicer-Server erreichbar ($v)")
         } catch (e: Exception) {
-            toast("Slicer-Server nicht erreichbar: ${e.message}")
+            toast("Slicer-Server nicht erreichbar: ${e.readable()}")
         }
     }
 
@@ -215,7 +218,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 _slice.value = SliceUiState.Done(result)
             } catch (e: Exception) {
                 out.delete()
-                if (isActive) _slice.value = SliceUiState.Failed(e.message ?: e.javaClass.simpleName)
+                if (isActive) _slice.value = SliceUiState.Failed(e.readable())
             }
         }
     }
@@ -283,7 +286,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             _statusError.value = null
         } catch (e: Exception) {
             _status.value = PrinterStatus()
-            _statusError.value = e.message ?: e.javaClass.simpleName
+            _statusError.value = e.readable()
         }
     }
 
@@ -294,7 +297,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         try {
             _remoteFiles.value = c.listFiles()
         } catch (e: Exception) {
-            toast("Dateiliste nicht abrufbar: ${e.message}")
+            toast("Dateiliste nicht abrufbar: ${e.readable()}")
         }
     }
 
@@ -306,7 +309,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             toast(label)
             refreshStatus()
         } catch (e: Exception) {
-            toast("Fehler: ${e.message}")
+            toast("Fehler: ${e.readable()}")
         }
     }
 
@@ -343,7 +346,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             )
             refreshStatus()
         } catch (e: Exception) {
-            toast("Senden fehlgeschlagen: ${e.message}")
+            toast("Senden fehlgeschlagen: ${e.readable()}")
         } finally {
             _transfer.value = TransferState()
         }
