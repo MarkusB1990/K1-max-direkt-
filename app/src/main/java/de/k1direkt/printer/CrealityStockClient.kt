@@ -129,11 +129,13 @@ class CrealityStockClient(host: String) : PrinterClient {
     override suspend fun cancel() = send(JSONObject().put("stop", 1))
 
     override suspend fun listFiles(): List<RemoteFile> = emptyList()
-    override suspend fun deleteFile(remoteName: String) =
+    override suspend fun deleteFile(remoteName: String) {
         throw UnsupportedOperationException("Mit der Original-Firmware nicht verfügbar")
+    }
 
-    override suspend fun sendGcode(script: String) =
+    override suspend fun sendGcode(script: String) {
         throw UnsupportedOperationException("Mit der Original-Firmware nicht verfügbar")
+    }
 
     override suspend fun emergencyStop() = cancel()
 

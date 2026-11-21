@@ -67,6 +67,7 @@ fun LibraryScreen(vm: AppViewModel, nav: Navigator) {
     var filter by rememberSaveable { mutableStateOf(LibFilter.ALL) }
     var renameItem by remember { mutableStateOf<LibraryFile?>(null) }
     var deleteItem by remember { mutableStateOf<LibraryFile?>(null) }
+    var printItem by remember { mutableStateOf<LibraryFile?>(null) }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNotEmpty()) vm.importUris(uris)
@@ -116,12 +117,12 @@ fun LibraryScreen(vm: AppViewModel, nav: Navigator) {
                         when {
                             item.type.sliceable && item.type != FileType.STEP -> nav.open(Overlay.Viewer(item))
                             item.type.sliceable -> nav.open(Overlay.Slice(item))
-                            item.type.printable -> vm.sendToPrinter(item, start = vm.settings.value.startAfterUpload)
+                            item.type.printable -> printItem = item
                         }
                     },
                     onSlice = { nav.open(Overlay.Slice(item)) },
                     onPreview = { nav.open(Overlay.Viewer(item)) },
-                    onPrint = { vm.sendToPrinter(item, start = true) },
+                    onPrint = { printItem = item },
                     onUploadOnly = { vm.sendToPrinter(item, start = false) },
                     onSource = { item.sourceUrl?.let { nav.open(Overlay.Browser(it)) } },
                     onRename = { renameItem = item },
@@ -147,6 +148,32 @@ fun LibraryScreen(vm: AppViewModel, nav: Navigator) {
                 TextButton(onClick = { vm.rename(item, name); renameItem = null }, enabled = name.isNotBlank()) { Text("Speichern") }
             },
             dismissButton = { TextButton(onClick = { renameItem = null }) { Text("Abbrechen") } },
+        )
+    }
+    printItem?.let { item ->
+        val autoStart = vm.settings.value.startAfterUpload
+        AlertDialog(
+            onDismissRequest = { printItem = null },
+            title = { Text("An K1 Max senden?") },
+            text = {
+                Text(
+                    "„${item.name}“ wird auf den Drucker geladen" +
+                        if (autoStart) " und der Druck sofort gestartet. Ist die Druckplatte frei?" else "."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { vm.sendToPrinter(item, start = autoStart); printItem = null }) {
+                    Text(if (autoStart) "Drucken" else "Hochladen")
+                }
+            },
+            dismissButton = {
+                Row {
+                    if (autoStart) {
+                        TextButton(onClick = { vm.sendToPrinter(item, start = false); printItem = null }) { Text("Nur hochladen") }
+                    }
+                    TextButton(onClick = { printItem = null }) { Text("Abbrechen") }
+                }
+            },
         )
     }
     deleteItem?.let { item ->

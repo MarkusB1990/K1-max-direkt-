@@ -53,7 +53,7 @@ sealed interface MeshState {
 @Composable
 fun rememberMesh(file: File): MeshState {
     val state by produceState<MeshState>(MeshState.Loading, file) {
-        value = withContext(Dispatchers.Default) {
+        val loaded = withContext(Dispatchers.Default) {
             try {
                 MeshState.Ready(MeshLoader.load(file))
             } catch (e: OutOfMemoryError) {
@@ -62,6 +62,7 @@ fun rememberMesh(file: File): MeshState {
                 MeshState.Failed(e.message ?: "Vorschau nicht möglich")
             }
         }
+        this.value = loaded
     }
     return state
 }

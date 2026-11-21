@@ -17,6 +17,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Kotlin kompilieren + Lint
         run: ./gradlew --no-daemon compileDebugKotlin lintDebug
+      - name: Lint-Meldungen anzeigen
+        if: always()
+        run: cat app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt || true
       - name: Lint-Bericht hochladen
         if: always()
         uses: actions/upload-artifact@v4
