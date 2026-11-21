@@ -22,8 +22,35 @@ jobs:
           du -sh /tmp/squashfs-root; ls /tmp/squashfs-root/lib | head -5; ls /tmp/squashfs-root/lib | wc -l
           file "/tmp/squashfs-root/resources/profiles/Creality.opc"
           ls "/tmp/squashfs-root/resources/profiles/Creality" | head; ls "/tmp/squashfs-root/resources/profiles/Creality/machine" | grep -i k1 | head -20
+      - name: OPC-Format untersuchen
+        run: |
+          cd /tmp/squashfs-root/resources/profiles
+          ls -la Creality.opc OrcaFilamentLibrary* 2>/dev/null | head
+          od -A x -t x1z -N 64 Creality.opc
+          python3 - <<'PY'
+          import zipfile, gzip, lzma
+          p='Creality.opc'
+          print('zip?', zipfile.is_zipfile(p))
+          b=open(p,'rb').read(16); print('magic', b)
+          PY
+          ls ../ | head -30
+      - name: Datadir nach CLI-Start
+        run: |
+          mkdir -p /tmp/datadir && cd /tmp/squashfs-root
+          timeout 120 ./AppRun --datadir /tmp/datadir --info /dev/null > /dev/null 2>&1 || true
+          find /tmp/datadir -maxdepth 3 | head -30
+      - name: Profile aus dem Quellcode (Tag v2.5.2)
+        run: |
+          apt-get install -y -qq git > /dev/null
+          git clone -q --depth 1 --branch v2.5.2 --filter=blob:none --sparse https://github.com/OrcaSlicer/OrcaSlicer.git /tmp/orca-src
+          cd /tmp/orca-src && git sparse-checkout set resources/profiles/Creality resources/profiles/OrcaFilamentLibrary
+          ls resources/profiles/ | head; ls resources/profiles/Creality | head
+          ls resources/profiles/Creality/machine | grep -i "k1" | head
+          ls resources/profiles/Creality/process | grep -i "k1 max\|k1max" | head
+          ls resources/profiles/Creality/filament | grep -i "k1\|generic" | head -30
+          du -sh resources/profiles
       - name: Profile zusammenführen
-        run: python3 slicer-server/orca_profiles.py /tmp/squashfs-root/resources/profiles /tmp/prof && ls -la /tmp/prof
+        run: python3 slicer-server/orca_profiles.py /tmp/orca-src/resources/profiles /tmp/prof && ls -la /tmp/prof
       - name: Profile ansehen
         run: |
           python3 - <<'PY'
@@ -71,6 +98,7 @@ jobs:
         if: always()
         run: |
           [ -n "$(ls /tmp/out/*.gcode 2>/dev/null)" ] && { echo "schon ok"; exit 0; }
+          [ -f /tmp/prof/machine.json ] || { echo "keine Profile"; exit 0; }
           cd /tmp/squashfs-root
           timeout 300 xvfb-run -a ./AppRun --datadir /tmp/datadir --arrange 1 --slice 0 --load-settings "/tmp/prof/machine.json;/tmp/prof/process.json" --load-filaments "/tmp/prof/filament_PLA.json" --outputdir /tmp/out /tmp/cube.stl 2>&1 | tail -30
           ls -la /tmp/out
