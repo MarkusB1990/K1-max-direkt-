@@ -37,6 +37,8 @@ import de.k1direkt.data.LibraryFile
 import de.k1direkt.viewer.Mesh
 import de.k1direkt.viewer.MeshLoader
 import de.k1direkt.viewer.ModelSurfaceView
+import de.k1direkt.viewer.PreviewConfig
+import de.k1direkt.viewer.SoftwareMeshPreview
 import de.k1direkt.ui.AppViewModel
 import de.k1direkt.ui.Navigator
 import de.k1direkt.ui.Overlay
@@ -85,7 +87,9 @@ fun ModelPreview(state: MeshState, modifier: Modifier = Modifier) {
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(24.dp),
             )
-            is MeshState.Ready -> GlView(state.mesh, Modifier.fillMaxSize())
+            is MeshState.Ready ->
+                if (PreviewConfig.useOpenGl) GlView(state.mesh, Modifier.fillMaxSize())
+                else SoftwareMeshPreview(state.mesh, Modifier.fillMaxSize())
         }
     }
 }

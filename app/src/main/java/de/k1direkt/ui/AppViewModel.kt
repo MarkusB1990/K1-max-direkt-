@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import android.webkit.CookieManager
 import android.webkit.URLUtil
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import de.k1direkt.K1Application
@@ -254,6 +255,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startPolling() {
         pollers++
+        if (!liveConnection) return
         if (pollJob?.isActive == true) return
         pollJob = viewModelScope.launch {
             settings.first() // sicherstellen, dass Einstellungen geladen sind
@@ -286,6 +288,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun loadRemoteFiles() = viewModelScope.launch {
+        if (!liveConnection) return@launch
         val c = client() ?: return@launch
         if (!c.supportsFileList) { _remoteFiles.value = emptyList(); return@launch }
         try {
@@ -344,6 +347,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         } finally {
             _transfer.value = TransferState()
         }
+    }
+
+    // ------------------------------------------------------------------ Nur für Tests / Screenshots
+
+    /** false = keine Netzwerkzugriffe auf den Drucker (Screenshot-Tests mit Beispieldaten). */
+    @VisibleForTesting
+    internal var liveConnection = true
+
+    @VisibleForTesting
+    internal fun showDemoData(search: SearchState? = null, status: PrinterStatus? = null, files: List<RemoteFile>? = null, slice: SliceUiState? = null) {
+        search?.let { _search.value = it }
+        status?.let { _status.value = it; _statusError.value = null }
+        files?.let { _remoteFiles.value = it }
+        slice?.let { _slice.value = it }
     }
 
     override fun onCleared() {

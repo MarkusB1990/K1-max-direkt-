@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("io.github.takahirom.roborazzi")
 }
 
 android {
@@ -34,6 +35,9 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 dependencies {
@@ -54,4 +58,14 @@ dependencies {
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // Screenshot-Tests (laufen auf der JVM, es wird kein APK gebaut)
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test.ext:junit:1.2.1")
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.36.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.36.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-junit-rule:1.36.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

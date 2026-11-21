@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
@@ -50,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -233,12 +235,29 @@ private fun SiteChip(site: ModelSite, onClick: () -> Unit) {
 private fun ResultCard(r: SearchResult, onClick: () -> Unit) {
     Card(onClick = onClick, shape = RoundedCornerShape(12.dp)) {
         Box {
-            AsyncImage(
-                model = r.imageUrl,
-                contentDescription = r.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceVariant),
-            )
+            if (r.imageUrl != null) {
+                AsyncImage(
+                    model = r.imageUrl,
+                    contentDescription = r.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).background(MaterialTheme.colorScheme.surfaceVariant),
+                )
+            } else {
+                // Platzhalter, wenn die Plattform kein Vorschaubild liefert
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(r.site.color).copy(alpha = 0.55f), MaterialTheme.colorScheme.surfaceVariant)
+                            )
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.ViewInAr, null, Modifier.size(56.dp), tint = Color.White.copy(alpha = 0.85f))
+                }
+            }
             Text(
                 r.site.displayName,
                 style = MaterialTheme.typography.labelSmall,
