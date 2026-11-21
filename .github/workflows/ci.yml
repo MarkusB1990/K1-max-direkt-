@@ -49,6 +49,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Vorschaubilder rendern (Robolectric, kein APK)
         run: ./gradlew --no-daemon recordRoborazziDebug
+      - name: Bilder ins Log schreiben
+        run: for f in app/screenshots/*.png; do echo "===PNG $(basename $f)"; base64 -w 76 "$f"; echo "===END"; done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
