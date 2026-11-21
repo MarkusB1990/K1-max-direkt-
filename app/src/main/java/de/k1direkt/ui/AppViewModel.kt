@@ -13,6 +13,8 @@ import de.k1direkt.data.FileNames
 import de.k1direkt.data.Http
 import de.k1direkt.data.LibraryFile
 import de.k1direkt.data.SOURCE_SLICED
+import de.k1direkt.data.UpdateInfo
+import de.k1direkt.data.Updater
 import de.k1direkt.data.await
 import de.k1direkt.data.readable
 import de.k1direkt.printer.PrintState
@@ -60,6 +62,16 @@ data class TransferState(
     val progress: Float? = null,
 )
 
+sealed interface UpdateUiState {
+    data object Idle : UpdateUiState
+    data object Checking : UpdateUiState
+    data object UpToDate : UpdateUiState
+    data class Available(val info: UpdateInfo) : UpdateUiState
+    data class Downloading(val info: UpdateInfo, val progress: Float) : UpdateUiState
+    data class Ready(val info: UpdateInfo, val apk: File) : UpdateUiState
+    data class Failed(val message: String, val info: UpdateInfo? = null) : UpdateUiState
+}
+
 sealed interface SliceUiState {
     data object Idle : SliceUiState
     data object Running : SliceUiState
@@ -82,6 +94,59 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch { library.refresh() }
+    }
+
+    // ------------------------------------------------------------------ App-Update
+
+    private val _update = MutableStateFlow<UpdateUiState>(UpdateUiState.Idle)
+    val update: StateFlow<UpdateUiState> = _update.asStateFlow()
+
+    init {
+        // Beim Start still nach Updates suchen (nach der Deklaration von _update!)
+        if (Updater.autoCheck) checkForUpdate(silent = true)
+    }
+
+    fun checkForUpdate(silent: Boolean = false) = viewModelScope.launch {
+        if (_update.value is UpdateUiState.Downloading) return@launch
+        _update.value = UpdateUiState.Checking
+        _update.value = try {
+            Updater.check()?.let { UpdateUiState.Available(it) } ?: UpdateUiState.UpToDate
+        } catch (e: Exception) {
+            if (silent) UpdateUiState.Idle else UpdateUiState.Failed("Prüfen nicht möglich: ${e.readable()}")
+        }
+    }
+
+    fun downloadAndInstallUpdate() = viewModelScope.launch {
+        val info = when (val st = _update.value) {
+            is UpdateUiState.Available -> st.info
+            is UpdateUiState.Failed -> st.info ?: return@launch
+            is UpdateUiState.Ready -> { installUpdate(); return@launch }
+            else -> return@launch
+        }
+        val ctx = getApplication<Application>()
+        _update.value = UpdateUiState.Downloading(info, 0f)
+        try {
+            val apk = Updater.download(ctx, info) { p -> _update.value = UpdateUiState.Downloading(info, p) }
+            _update.value = UpdateUiState.Ready(info, apk)
+            installUpdate()
+        } catch (e: Exception) {
+            _update.value = UpdateUiState.Failed("Download fehlgeschlagen: ${e.readable()}", info)
+        }
+    }
+
+    fun installUpdate() {
+        val st = _update.value as? UpdateUiState.Ready ?: return
+        val ctx = getApplication<Application>()
+        if (!Updater.canInstall(ctx)) {
+            toast("Bitte „Installation aus dieser Quelle“ erlauben und dann erneut auf Installieren tippen")
+            Updater.openInstallPermissionSettings(ctx)
+            return
+        }
+        try {
+            Updater.install(ctx, st.apk)
+        } catch (e: Exception) {
+            toast("Installer konnte nicht geöffnet werden: ${e.readable()}")
+        }
     }
 
     // ------------------------------------------------------------------ Einstellungen

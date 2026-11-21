@@ -13,8 +13,10 @@ android {
         applicationId = "de.k1direkt"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.2.1"
+        // Jeder CI-Build bekommt eine eigene, steigende Versionsnummer (Grundlage für das In-App-Update)
+        val buildNumber = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull()
+        versionCode = if (buildNumber != null) 100 + buildNumber else 4
+        versionName = if (buildNumber != null) "0.3.$buildNumber" else "0.3.0-lokal"
     }
 
     // Fester Signaturschlüssel: Die Schlüsseldatei liegt (passwortgeschützt) im Repo,
@@ -49,6 +51,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         unitTests.isIncludeAndroidResources = true

@@ -25,6 +25,8 @@ import androidx.compose.material.icons.outlined.Explore
 import androidx.compose.material.icons.outlined.Print
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.ViewInAr
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -97,6 +99,8 @@ fun K1AppUi(vm: AppViewModel) {
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(Unit) { vm.messages.collect { snackbar.showSnackbar(it) } }
     val transfer by vm.transfer.collectAsStateWithLifecycle()
+    val update by vm.update.collectAsStateWithLifecycle()
+    val updateAvailable = update is UpdateUiState.Available || update is UpdateUiState.Ready
 
     BackHandler(enabled = nav.stack.isNotEmpty()) { nav.back() }
 
@@ -116,7 +120,11 @@ fun K1AppUi(vm: AppViewModel) {
                             NavigationBarItem(
                                 selected = selected,
                                 onClick = { nav.openTab(t) },
-                                icon = { Icon(if (selected) t.iconSelected else t.icon, contentDescription = t.label) },
+                                icon = {
+                                    BadgedBox(badge = { if (t == Tab.SETTINGS && updateAvailable) Badge(containerColor = MaterialTheme.colorScheme.primary) }) {
+                                        Icon(if (selected) t.iconSelected else t.icon, contentDescription = t.label)
+                                    }
+                                },
                                 label = { Text(t.label) },
                                 colors = NavigationBarItemDefaults.colors(
                                     indicatorColor = MaterialTheme.colorScheme.primaryContainer,

@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.github.takahirom.roborazzi.captureRoboImage
 import de.k1direkt.data.AppSettings
+import de.k1direkt.data.Updater
 import de.k1direkt.printer.PrintState
 import de.k1direkt.printer.PrinterStatus
 import de.k1direkt.printer.RemoteFile
@@ -50,6 +51,11 @@ class ScreenshotTest {
 
     @get:Rule
     val compose = createAndroidComposeRule<MainActivity>()
+
+    init {
+        // keine echten Update-Abfragen bei GitHub während der Screenshots
+        Updater.autoCheck = false
+    }
 
     private lateinit var vm: AppViewModel
     private val app get() = compose.activity.application as K1Application

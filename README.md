@@ -74,7 +74,8 @@ Voraussetzungen: Android Studio (Ladybug oder neuer) bzw. JDK 17 und das Android
 ./gradlew assembleDebug      # → app/build/outputs/apk/debug/app-debug.apk
 ```
 
-GitHub Actions baut das APK bei jedem Push (Actions → „APK bauen“ → Artefakt *K1MaxDirekt-apk*).
+GitHub Actions baut das APK bei jedem Push und veröffentlicht fest signierte Builds als **GitHub-Release**.
+Die App findet neue Versionen selbst: **Einstellungen → App-Update → Herunterladen & installieren**.
 
 **Signatur:** Release-APKs werden mit einem festen Schlüssel (`app/k1direkt-release.p12`) signiert, damit Updates
 sich über die installierte App installieren lassen. Das Passwort liegt nur im GitHub-Secret `K1_SIGNING_PASSWORD`
