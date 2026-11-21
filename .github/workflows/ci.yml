@@ -37,7 +37,7 @@ jobs:
           python-version: "3.12"
       - run: pip install -r slicer-server/requirements.txt
       - run: python -c "import sys; sys.path.insert(0, 'slicer-server'); import app"
-      - name: Docker-Image bauen (wie Home Assistant)
+      - name: Docker-Image bauen (wie Home Assistant, mit OrcaSlicer)
         run: docker build -t k1-slicer slicer-server
       - name: Container starten und Testwürfel slicen
         run: |
@@ -56,8 +56,19 @@ jobs:
                   for i in t: o.write(struct.pack('<3f',*v[i]))
                   o.write(b'\0\0')
           PY
-          curl -sf -D - -o /tmp/cube.gcode -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F material=PETG localhost:8090/slice | grep -i "x-print-time"
-          grep -m1 START_PRINT /tmp/cube.gcode
+          echo "--- PLA (Standard)"
+          curl -sf -D /tmp/h1.txt -o /tmp/pla.gcode -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F material=PLA -F nozzle_temp=220 -F bed_temp=60 localhost:8090/slice
+          grep -i "x-print-time\|x-filament" /tmp/h1.txt
+          grep -m1 "^START_PRINT" /tmp/pla.gcode | tee /dev/stderr | grep -q "EXTRUDER_TEMP=220 BED_TEMP=60"
+          grep -q "OrcaSlicer" /tmp/pla.gcode
+          echo "--- PETG, 0.12 mm, Stützen, Brim, schneller, skaliert + gedreht"
+          curl -sf -o /tmp/petg.gcode -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F material=PETG -F nozzle_temp=245 -F bed_temp=80 \
+            -F layer_height=0.12 -F support=buildplate -F brim=5 -F speed=130 -F scale=150 -F rotate=30 localhost:8090/slice
+          grep -m1 "^START_PRINT" /tmp/petg.gcode | tee /dev/stderr | grep -q "EXTRUDER_TEMP=245 BED_TEMP=80"
+          grep -q "^; layer_height = 0.12" /tmp/petg.gcode
+          echo "--- Zu groß → verständlicher Fehler"
+          code=$(curl -s -o /tmp/err.json -w '%{http_code}' -H "Authorization: Bearer test" -F file=@/tmp/cube.stl -F scale=2000 localhost:8090/slice)
+          cat /tmp/err.json; echo; [ "$code" = "422" ]
           docker logs k1 | head -3
 
   screenshots:

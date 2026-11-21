@@ -99,8 +99,8 @@ fun SettingsScreen(vm: AppViewModel) {
         // ------------------------------------------------ Slicer
         SectionTitle("Slicer-Server")
         Text(
-            "Slicen übernimmt der mitgelieferte Slicer-Server (PrusaSlicer mit K1-Max-Profil) – z. B. als Docker-Container " +
-                "auf PC, NAS, Raspberry Pi oder dem Home-Assistant-Host. Anleitung: slicer-server/README.md.",
+            "Slicen übernimmt der mitgelieferte Slicer-Server (OrcaSlicer mit den offiziellen K1-Max-Profilen) – " +
+                "als Home-Assistant-App oder Docker-Container. Anleitung: slicer-server/README.md.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

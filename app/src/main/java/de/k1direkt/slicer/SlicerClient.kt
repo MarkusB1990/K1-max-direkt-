@@ -23,7 +23,7 @@ data class SliceResult(
 
 /**
  * Spricht den mitgelieferten Slicer-Server (Ordner slicer-server/ im Repository) an.
- * Android selbst kann PrusaSlicer/OrcaSlicer nicht ausführen – deshalb wird das Modell
+ * Android selbst kann OrcaSlicer nicht ausführen – deshalb wird das Modell
  * an einen kleinen Server im Heimnetz geschickt (PC, NAS, Raspberry Pi, Home-Assistant-Host).
  */
 class SlicerClient(baseUrl: String, private val token: String) {
@@ -104,7 +104,7 @@ object GcodeInfo {
         }
         runCatching {
             file.bufferedReader().use { r -> scan(r.lineSequence().take(400)) }
-            // PrusaSlicer/Orca schreiben die Zusammenfassung ans Dateiende
+            // OrcaSlicer/PrusaSlicer schreiben die Zusammenfassung ans Dateiende
             java.io.RandomAccessFile(file, "r").use { raf ->
                 val len = raf.length()
                 val start = (len - 64_000).coerceAtLeast(0)

@@ -26,20 +26,20 @@ herunterladen, slicen und direkt an den Drucker schicken – alles vom Handy aus
 | **Downloads** | Jeder Download im eingebauten Browser landet automatisch in der Bibliothek. ZIP-Archive werden entpackt (STL, 3MF, OBJ, STEP, G-Code). Logins bleiben gespeichert. |
 | **Eigene Dateien** | Über „Eigene Datei“ selbst erstellte Modelle hochladen, oder aus jeder anderen App per **Teilen → K1 Max Direkt** bzw. **Öffnen mit**. |
 | **3D-Vorschau** | STL, 3MF und OBJ drehen und zoomen, mit Druckplatte 300 × 300 mm und Warnung, wenn das Modell nicht passt. |
-| **Slicen** | Material (PLA, PETG, ABS, ASA, TPU, PLA-CF), Schichthöhe, Füllung, Stützen, Brim, Wände, Geschwindigkeit, Skalierung, Drehung. Fertiges K1-Max-Profil. |
+| **Slicen** | Mit OrcaSlicer: Material (PLA, PETG, ABS, ASA, TPU, PLA-CF), Schichthöhe, Füllung, Stützen, Brim, Wände, Geschwindigkeit, Skalierung, Drehung. Offizielle K1-Max-Profile. |
 | **Drucken** | G-Code per Moonraker auf den K1 Max laden und sofort starten. Live-Status mit Fortschritt, Restzeit und Temperaturen (Düse, Bett, Kammer), Pause, Fortsetzen, Abbrechen, NOT-AUS, Vorheizen, Licht, eigene G-Code-Befehle, Kamera-Livebild und die Dateiliste auf dem Drucker. |
 
 ## Aufbau
 
 ```
 app/             Android-App (Kotlin, Jetpack Compose, Material 3)
-slicer-server/   Slicer-Server (PrusaSlicer + K1-Max-Profil, Docker)
+slicer-server/   Slicer-Server (OrcaSlicer + offizielle K1-Max-Profile, Home-Assistant-App oder Docker)
 ```
 
 ### Warum ein Slicer-Server?
-Echte Slicer wie OrcaSlicer, PrusaSlicer oder Cura laufen nicht auf Android. Die App schickt das Modell
-deshalb an einen kleinen Server in deinem Heimnetz (PC, NAS, Raspberry Pi, Home-Assistant-Host), der mit
-PrusaSlicer und einem K1-Max-Profil slict. Bereits gesliced G-Code (z. B. aus OrcaSlicer am PC) kannst du
+Echte Slicer wie OrcaSlicer laufen nicht auf Android. Die App schickt das Modell deshalb an einen kleinen
+Server in deinem Heimnetz – am einfachsten als **Home-Assistant-App** –, der mit **OrcaSlicer** und den
+offiziellen Creality-K1-Max-Profilen slict. Bereits gesliced G-Code (z. B. aus OrcaSlicer am PC) kannst du
 auch ohne Server direkt an den Drucker schicken. Einrichtung: [slicer-server/README.md](slicer-server/README.md).
 
 ## Drucker-Verbindung

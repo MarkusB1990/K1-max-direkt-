@@ -1,11 +1,12 @@
 """
-K1 Max Direkt – Slicer-Server
+K1 Max Direkt – Slicer-Server (OrcaSlicer)
 
-Nimmt STL/3MF/OBJ/STEP-Dateien von der Android-App entgegen, slict sie mit
-PrusaSlicer (CLI) und dem mitgelieferten Creality-K1-Max-Profil und liefert
-den fertigen G-Code zurück.
+Nimmt STL/3MF/OBJ/STEP-Dateien von der Android-App entgegen, slict sie mit der
+OrcaSlicer-Kommandozeile und den offiziellen Creality-K1-Max-Profilen von OrcaSlicer
+und liefert den fertigen G-Code zurück.
 """
 import asyncio
+import json
 import os
 import re
 import shutil
@@ -16,38 +17,24 @@ from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadF
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
-SLICER_BIN = os.environ.get("SLICER_BIN", "prusa-slicer")
-PROFILE = Path(os.environ.get("SLICER_PROFILE", Path(__file__).parent / "profiles" / "k1max.ini"))
+ORCA_BIN = os.environ.get("ORCA_BIN", "/opt/orca/AppRun")
+PROFILES = Path(os.environ.get("ORCA_PROFILES", Path(__file__).parent / "orca-profiles"))
 TOKEN = os.environ.get("SLICER_TOKEN", "").strip()
 MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "300"))
 TIMEOUT_S = int(os.environ.get("SLICE_TIMEOUT", "900"))
 PARALLEL = int(os.environ.get("SLICE_PARALLEL", "1"))
 
 ALLOWED = {".stl", ".3mf", ".obj", ".step", ".stp"}
+MATERIALS = {"PLA", "PETG", "ABS", "ASA", "TPU", "PLA_CF"}
 
-# Materialspezifische Werte, die nicht von der App kommen
-MATERIAL_EXTRA = {
-    "PLA": {"filament-type": "PLA", "max-volumetric-speed": "21", "filament-density": "1.24"},
-    "PLA_CF": {"filament-type": "PLA", "max-volumetric-speed": "15", "filament-density": "1.29"},
-    "PETG": {"filament-type": "PETG", "max-volumetric-speed": "12", "filament-density": "1.27"},
-    "ABS": {"filament-type": "ABS", "max-volumetric-speed": "18", "filament-density": "1.04"},
-    "ASA": {"filament-type": "ASA", "max-volumetric-speed": "18", "filament-density": "1.07"},
-    "TPU": {"filament-type": "FLEX", "max-volumetric-speed": "3.5", "filament-density": "1.21",
-            "retract-length": "0.4", "retract-speed": "20"},
-}
+# Geschwindigkeiten im Prozessprofil, die mit dem Tempo-Faktor der App skaliert werden
+SPEED_KEYS = [
+    "outer_wall_speed", "inner_wall_speed", "small_perimeter_speed", "sparse_infill_speed",
+    "internal_solid_infill_speed", "top_surface_speed", "gap_infill_speed", "support_speed",
+    "support_interface_speed",
+]
 
-# Basisgeschwindigkeiten aus dem Profil (mm/s) – werden mit dem Geschwindigkeitsfaktor skaliert
-BASE_SPEEDS = {
-    "perimeter-speed": 200,
-    "external-perimeter-speed": 150,
-    "infill-speed": 270,
-    "solid-infill-speed": 220,
-    "top-solid-infill-speed": 150,
-    "gap-fill-speed": 100,
-    "support-material-speed": 150,
-}
-
-app = FastAPI(title="K1 Max Direkt Slicer", version="0.1.0")
+app = FastAPI(title="K1 Max Direkt Slicer", version="0.2.0")
 _sem = asyncio.Semaphore(PARALLEL)
 
 
@@ -56,9 +43,9 @@ def check_token(authorization: str | None = Header(default=None)):
         raise HTTPException(status_code=401, detail="Ungültiger oder fehlender Token")
 
 
-async def _run(*args: str, timeout: int) -> tuple[int, str]:
+async def _run(*args: str, timeout: int, cwd: str | None = None) -> tuple[int, str]:
     proc = await asyncio.create_subprocess_exec(
-        *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
+        *args, cwd=cwd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.STDOUT
     )
     try:
         out, _ = await asyncio.wait_for(proc.communicate(), timeout=timeout)
@@ -70,34 +57,121 @@ async def _run(*args: str, timeout: int) -> tuple[int, str]:
 
 @app.get("/health", dependencies=[Depends(check_token)])
 async def health():
-    if not shutil.which(SLICER_BIN):
-        raise HTTPException(status_code=500, detail=f"{SLICER_BIN} nicht gefunden")
-    _, out = await _run(SLICER_BIN, "--help", timeout=30)
-    first = out.strip().splitlines()[0] if out.strip() else SLICER_BIN
-    return {"status": "ok", "slicer": first.strip(), "profile": PROFILE.name}
+    if not Path(ORCA_BIN).exists():
+        raise HTTPException(status_code=500, detail=f"OrcaSlicer nicht gefunden: {ORCA_BIN}")
+    _, out = await _run(ORCA_BIN, "--help", timeout=60)
+    first = next((l.strip().rstrip(":") for l in out.splitlines() if l.startswith("OrcaSlicer")), "OrcaSlicer")
+    profiles = (PROFILES / "profiles.txt").read_text().strip().splitlines() if (PROFILES / "profiles.txt").exists() else []
+    return {"status": "ok", "slicer": first, "profiles": profiles}
 
 
 def _clamp(v: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, v))
 
 
-def _parse_gcode_stats(path: Path) -> dict[str, str]:
-    """Liest Druckzeit/Filament aus den Kommentaren am Ende der G-Code-Datei."""
+def _load(name: str) -> dict:
+    return json.loads((PROFILES / name).read_text(encoding="utf-8"))
+
+
+def _scaled(value, factor: float):
+    """Skaliert Zahlen in Profilwerten ('200', ['200'], '80%') – Prozentwerte bleiben unverändert."""
+    if isinstance(value, list):
+        return [_scaled(v, factor) for v in value]
+    s = str(value)
+    if s.endswith("%"):
+        return s
+    try:
+        return str(round(float(s) * factor))
+    except ValueError:
+        return value
+
+
+def build_profiles(work: Path, *, lh: float, infill: int, perimeters: int, support: str, brim: float,
+                   material: str, nozzle: int, bed: int, fan: int, speed_factor: float) -> tuple[Path, Path, Path]:
+    machine = _load("machine.json")
+
+    process = _load("process.json")
+    process.update({
+        "name": "K1 Max Direkt",
+        "layer_height": f"{lh:.2f}",
+        "initial_layer_print_height": f"{max(lh, 0.2):.2f}",
+        "sparse_infill_density": f"{infill}%",
+        "wall_loops": str(perimeters),
+        "enable_support": "1" if support in ("buildplate", "everywhere") else "0",
+        "support_type": "tree(auto)",
+        "support_on_build_plate_only": "1" if support == "buildplate" else "0",
+        "brim_type": "outer_only" if brim > 0 else "no_brim",
+        "brim_width": f"{brim:.1f}",
+        "curr_bed_type": "Textured PEI Plate",
+    })
+    for key in SPEED_KEYS:
+        if key in process:
+            process[key] = _scaled(process[key], speed_factor)
+
+    filament = _load(f"filament_{material}.json")
+    filament["name"] = f"K1 Max Direkt {material}"
+    filament["nozzle_temperature"] = [str(nozzle)]
+    filament["nozzle_temperature_initial_layer"] = [str(nozzle)]
+    # Jede Druckplatten-Variante auf dieselbe Betttemperatur setzen – sonst nimmt Orca z. B. die
+    # "Cool Plate"-Temperatur (35 °C) oder lehnt eine Platte mit 0 °C als "nicht unterstützt" ab.
+    for key in list(filament):
+        if re.fullmatch(r".*_plate_temp(_initial_layer)?", key):
+            filament[key] = [str(bed)]
+    filament["fan_max_speed"] = [str(fan)]
+    filament["fan_min_speed"] = [str(fan)]
+
+    paths = []
+    for name, cfg in (("machine.json", machine), ("process.json", process), ("filament.json", filament)):
+        p = work / name
+        p.write_text(json.dumps(cfg, ensure_ascii=False), encoding="utf-8")
+        paths.append(p)
+    return paths[0], paths[1], paths[2]
+
+
+def _fmt_seconds(s: float) -> str:
+    s = int(round(s))
+    h, m, sec = s // 3600, (s % 3600) // 60, s % 60
+    return f"{h}h {m}m {sec}s" if h else f"{m}m {sec}s"
+
+
+def _stats(gcode: Path, statistics: Path | None) -> dict[str, str]:
     stats: dict[str, str] = {}
-    size = path.stat().st_size
-    with path.open("rb") as f:
-        f.seek(max(0, size - 200_000))
+    size = gcode.stat().st_size
+    with gcode.open("rb") as f:
+        f.seek(max(0, size - 400_000))
         tail = f.read().decode("utf-8", "replace")
-    m = re.search(r"; estimated printing time \(normal mode\) = (.+)", tail)
-    if m:
+    if m := re.search(r"; estimated printing time \(normal mode\) = (.+)", tail):
         stats["X-Print-Time"] = m.group(1).strip()
-    m = re.search(r"; filament used \[mm\] = ([\d.]+)", tail)
-    if m:
+    if m := re.search(r"; filament used \[mm\] = ([\d.]+)", tail):
         stats["X-Filament-Meters"] = f"{float(m.group(1)) / 1000:.2f}"
-    m = re.search(r"; filament used \[g\] = ([\d.]+)", tail)
-    if m:
+    if m := re.search(r"; (?:total )?filament used \[g\] = ([\d.]+)", tail):
         stats["X-Filament-Grams"] = m.group(1)
+    if statistics and statistics.exists() and "X-Print-Time" not in stats:
+        try:
+            summary = json.loads(statistics.read_text())["summary"]
+            stats["X-Print-Time"] = _fmt_seconds(summary["time"])
+            stats.setdefault("X-Filament-Grams", f"{summary['weight']:.2f}")
+        except Exception:
+            pass
     return stats
+
+
+def _error_text(code: int, log: str, result_json: Path) -> str:
+    detail = ""
+    if result_json.exists():
+        try:
+            r = json.loads(result_json.read_text())
+            detail = r.get("error_string") or ""
+            for plate in r.get("sliced_plates", []):
+                if plate.get("warning_message"):
+                    detail += f" ({plate['warning_message']})"
+        except Exception:
+            pass
+    hints = {
+        206: "Das Modell passt nicht auf die Druckplatte (300 × 300 × 300 mm) – bitte kleiner skalieren.",
+    }
+    tail = "\n".join(log.strip().splitlines()[-12:])
+    return f"OrcaSlicer-Fehler (Code {code}): {hints.get(code, detail or 'unbekannt')}\n{tail}".strip()
 
 
 @app.post("/slice", dependencies=[Depends(check_token)])
@@ -120,6 +194,9 @@ async def slice_model(
     ext = Path(name).suffix.lower()
     if ext not in ALLOWED:
         raise HTTPException(status_code=400, detail=f"Dateityp {ext or '?'} wird nicht unterstützt")
+    material = material.upper()
+    if material not in MATERIALS:
+        material = "PLA"
 
     work = Path(tempfile.mkdtemp(prefix="k1slice_"))
     try:
@@ -133,53 +210,43 @@ async def slice_model(
                     raise HTTPException(status_code=413, detail=f"Datei größer als {MAX_UPLOAD_MB} MB")
                 out.write(chunk)
 
-        lh = _clamp(layer_height, 0.05, 0.32)
-        nozzle = int(_clamp(nozzle_temp, 150, 300))
-        bed = int(_clamp(bed_temp, 0, 110))
-        fan_pct = int(_clamp(fan, 0, 100))
-        factor = _clamp(speed, 30, 200) / 100.0
-        result = work / "out" / f"{safe_stem}.gcode"
-        result.parent.mkdir()
-
+        machine, process, filament = build_profiles(
+            work,
+            lh=_clamp(layer_height, 0.05, 0.32),
+            infill=int(_clamp(infill, 0, 100)),
+            perimeters=int(_clamp(perimeters, 1, 10)),
+            support=support,
+            brim=_clamp(brim, 0, 20),
+            material=material,
+            nozzle=int(_clamp(nozzle_temp, 150, 300)),
+            bed=int(_clamp(bed_temp, 0, 110)),
+            fan=int(_clamp(fan, 0, 100)),
+            speed_factor=_clamp(speed, 30, 200) / 100.0,
+        )
+        outdir = work / "out"
+        outdir.mkdir()
         args = [
-            SLICER_BIN, "--export-gcode",
-            "--load", str(PROFILE),
-            "--layer-height", f"{lh:.2f}",
-            "--first-layer-height", f"{max(lh, 0.2):.2f}",
-            "--fill-density", f"{int(_clamp(infill, 0, 100))}%",
-            "--perimeters", str(int(_clamp(perimeters, 1, 10))),
-            "--temperature", str(nozzle),
-            "--first-layer-temperature", str(nozzle),
-            "--bed-temperature", str(bed),
-            "--first-layer-bed-temperature", str(bed),
-            "--min-fan-speed", str(fan_pct),
-            "--max-fan-speed", str(fan_pct),
-            "--bridge-fan-speed", str(max(fan_pct, 50 if fan_pct else 0)),
-            "--brim-width", f"{_clamp(brim, 0, 20):.1f}",
-            "--scale", f"{int(_clamp(scale, 1, 1000))}%",
-            "--center", "150,150",
-            "--ensure-on-bed",
-            "--output", str(result),
+            ORCA_BIN, "--datadir", str(work / "orca-data"),
+            "--arrange", "1", "--orient", "0", "--slice", "0", "--export-statistics",
+            "--load-settings", f"{machine};{process}",
+            "--load-filaments", str(filament),
+            "--outputdir", str(outdir),
         ]
+        if scale != 100:
+            args += ["--scale", f"{_clamp(scale, 1, 1000) / 100:.4f}"]
         if rotate % 360:
             args += ["--rotate", str(rotate % 360)]
-        if support in ("buildplate", "everywhere"):
-            args += ["--support-material", "--support-material-auto"]
-            if support == "buildplate":
-                args += ["--support-material-buildplate-only"]
-        for key, base in BASE_SPEEDS.items():
-            args += [f"--{key}", str(int(base * factor))]
-        for key, value in MATERIAL_EXTRA.get(material.upper(), MATERIAL_EXTRA["PLA"]).items():
-            args += [f"--{key}", value]
         args.append(str(src))
 
         async with _sem:
-            code, log = await _run(*args, timeout=TIMEOUT_S)
-        if code != 0 or not result.exists():
-            tail = "\n".join(line for line in log.strip().splitlines()[-15:])
-            raise HTTPException(status_code=422, detail=f"PrusaSlicer-Fehler:\n{tail}")
+            code, log = await _run(*args, timeout=TIMEOUT_S, cwd=str(work))
+        plate = outdir / "plate_1.gcode"
+        if code != 0 or not plate.exists():
+            raise HTTPException(status_code=422, detail=_error_text(code, log, outdir / "result.json"))
 
-        headers = _parse_gcode_stats(result)
+        result = outdir / f"{safe_stem}.gcode"
+        plate.rename(result)
+        headers = _stats(result, outdir / "plate_1.statistics.json")
         return FileResponse(
             result,
             media_type="text/x.gcode",

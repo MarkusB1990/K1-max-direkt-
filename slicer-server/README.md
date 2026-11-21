@@ -1,58 +1,49 @@
-# Slicer-Server für K1 Max Direkt
+# Slicer-Server für K1 Max Direkt (OrcaSlicer)
 
-Android kann PrusaSlicer/OrcaSlicer nicht selbst ausführen. Deshalb schickt die App das Modell an diesen
-kleinen Server in deinem Heimnetz. Er slict mit **PrusaSlicer 2.7** und einem **Creality-K1-Max-Profil**
-(`profiles/k1max.ini`) und gibt den fertigen G-Code zurück.
+Android kann OrcaSlicer nicht selbst ausführen. Deshalb schickt die App das Modell an diesen kleinen
+Server in deinem Heimnetz. Er slict mit **OrcaSlicer 2.5.2** und den **offiziellen Creality-K1-Max-Profilen**
+von OrcaSlicer (Drucker „Creality K1 Max (0.4 nozzle)“, Prozess „0.20mm Standard @Creality K1Max“,
+Filamente „Generic … @Creality“) und gibt den fertigen G-Code zurück – inklusive Vorschaubild fürs
+Drucker-Display, Objekt-Ausschluss und dem `START_PRINT`-Makro des K1 Max.
 
-Der Server läuft auf allem, was Docker kann: PC, NAS (Synology/QNAP/Unraid), Raspberry Pi 4/5 oder
-dem Home-Assistant-Host.
+## Variante 1: Home-Assistant-App (empfohlen, läuft immer)
 
-## Starten mit Docker (empfohlen)
+1. Home Assistant → **Einstellungen → Apps → App-Store** → ⋮ → **Repositories**
+2. Hinzufügen: `https://github.com/MarkusB1990/K1-max-direkt-#ccr-7592eb33-pjcy8z`
+3. App **„K1 Max Slicer“** installieren (der erste Build dauert einige Minuten) und starten.
+4. In der Handy-App unter **Einstellungen → Slicer-Server** eintragen: `http://<IP-von-Home-Assistant>:8090`
+
+Optionen in der App-Konfiguration: `token` (Zugangs-Token), `parallel` (gleichzeitige Aufträge), `timeout` (Sekunden).
+
+## Variante 2: Docker (PC, NAS, Raspberry Pi 4/5)
 
 ```bash
 cd slicer-server
 docker compose up -d --build
 ```
 
-Danach in der App unter **Einstellungen → Slicer-Server** eintragen:
+## Was die App einstellen kann
 
-```
-http://<IP-des-Servers>:8090
-```
+Die Handy-App passt pro Auftrag an: Material (PLA, PETG, ABS, ASA, TPU, PLA-CF), Düsen- und Betttemperatur,
+Schichthöhe, Füllung, Wände, Stützen (Baumstützen, nur von der Platte oder überall), Brim, Geschwindigkeit,
+Skalierung und Drehung. Alles andere kommt aus den OrcaSlicer-Profilen.
 
-und auf **Speichern & Verbindung testen** tippen.
+## Optionen (Umgebungsvariablen, Docker)
 
-## Ohne Docker (Linux)
+| Variable          | Standard | Bedeutung                                          |
+|-------------------|----------|----------------------------------------------------|
+| `SLICER_TOKEN`    | leer     | Wenn gesetzt, muss die App diesen Token mitsenden  |
+| `SLICE_PARALLEL`  | `1`      | Wie viele Aufträge gleichzeitig gesliced werden    |
+| `SLICE_TIMEOUT`   | `900`    | Abbruch nach so vielen Sekunden                    |
+| `MAX_UPLOAD_MB`   | `300`    | Maximale Dateigröße                                |
 
-```bash
-sudo apt install prusa-slicer python3-venv
-python3 -m venv venv && venv/bin/pip install -r requirements.txt
-venv/bin/uvicorn app:app --host 0.0.0.0 --port 8090
-```
-
-## Optionen (Umgebungsvariablen)
-
-| Variable          | Standard                | Bedeutung                                          |
-|-------------------|-------------------------|----------------------------------------------------|
-| `SLICER_TOKEN`    | leer                    | Wenn gesetzt, muss die App diesen Token mitsenden  |
-| `SLICE_PARALLEL`  | `1`                     | Wie viele Aufträge gleichzeitig gesliced werden    |
-| `SLICE_TIMEOUT`   | `900`                   | Abbruch nach so vielen Sekunden                    |
-| `MAX_UPLOAD_MB`   | `300`                   | Maximale Dateigröße                                |
-| `SLICER_PROFILE`  | `profiles/k1max.ini`    | Eigenes Profil verwenden                           |
-
-## Eigenes Profil
-
-Du kannst in PrusaSlicer am PC ein Profil feinjustieren und über *Datei → Exportieren → Konfiguration
-exportieren* als `.ini` speichern. Lege sie in `profiles/` ab und setze `SLICER_PROFILE` darauf.
-Wichtig: Start-G-Code `START_PRINT EXTRUDER_TEMP=[first_layer_temperature] BED_TEMP=[first_layer_bed_temperature]`
-und `autoemit_temperature_commands = 0` beibehalten, damit die Heiz- und Kalibrier-Makros des K1 Max laufen.
+Eine andere OrcaSlicer-Version lässt sich beim Bauen wählen: `docker build --build-arg ORCA_VERSION=2.5.2 …`
 
 ## API
 
-* `GET /health` → `{"status":"ok","slicer":"PrusaSlicer-2.7.2 …"}`
+* `GET /health` → `{"status":"ok","slicer":"OrcaSlicer-2.5.2","profiles":[…]}`
 * `POST /slice` (multipart): `file` + optional `layer_height`, `infill`, `support` (`none|buildplate|everywhere`),
-  `material` (`PLA|PETG|ABS|ASA|TPU|PLA_CF`), `brim`, `nozzle_temp`, `bed_temp`, `fan`, `perimeters`,
-  `speed` (Prozent), `scale` (Prozent), `rotate` (Grad).
+  `material`, `brim`, `nozzle_temp`, `bed_temp`, `fan`, `perimeters`, `speed` (Prozent), `scale` (Prozent), `rotate` (Grad).
   Antwort: G-Code-Datei, dazu die Header `X-Print-Time`, `X-Filament-Meters` und `X-Filament-Grams`.
 
 Den Server bitte **nicht** ungeschützt ins Internet stellen (höchstens per VPN, z. B. WireGuard/Tailscale).

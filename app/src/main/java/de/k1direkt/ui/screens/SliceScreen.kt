@@ -190,8 +190,8 @@ fun SliceScreen(vm: AppViewModel, nav: Navigator, item: LibraryFile) {
                 Spacer(Modifier.height(8.dp))
                 InfoCard(
                     title = "Slicer-Server fehlt",
-                    text = "Android kann OrcaSlicer/PrusaSlicer nicht selbst ausführen. Starte den mitgelieferten Slicer-Server " +
-                        "(Docker, Ordner slicer-server) auf PC/NAS/Raspberry Pi und trage die Adresse in den Einstellungen ein.",
+                    text = "Android kann OrcaSlicer nicht selbst ausführen. Starte den mitgelieferten Slicer-Server " +
+                        "(Home-Assistant-App oder Docker, Ordner slicer-server) und trage die Adresse in den Einstellungen ein.",
                     action = { TextButton(onClick = { nav.openTab(Tab.SETTINGS) }) { Text("Zu den Einstellungen") } },
                 )
             }
