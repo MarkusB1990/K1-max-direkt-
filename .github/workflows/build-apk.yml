@@ -1,7 +1,10 @@
 name: APK bauen
 
-# Nur manuell: Actions → "APK bauen" → Run workflow
+# Baut das APK bei jedem Push auf den Entwicklungs-Branch oder manuell unter Actions → "APK bauen".
+# Das APK liegt danach im Lauf unter "Artifacts" zum Herunterladen bereit.
 on:
+  push:
+    branches: ["ccr-7592eb33-pjcy8z"]
   workflow_dispatch:
 
 jobs:
@@ -16,7 +19,14 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: APK bauen
         run: ./gradlew --no-daemon assembleRelease
+      - name: APK benennen
+        run: |
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk "out/K1MaxDirekt-$VERSION.apk"
+          ls -la out
+          "$ANDROID_HOME"/build-tools/*/aapt2 dump badging out/*.apk 2>/dev/null | grep -E "^package|application-icon-160|sdkVersion" || true
       - uses: actions/upload-artifact@v4
         with:
           name: K1MaxDirekt-apk
-          path: app/build/outputs/apk/release/*.apk
+          path: out/*.apk

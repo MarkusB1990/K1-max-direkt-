@@ -1,12 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Stilisierter Würfel über einer Druckplatte -->
+<!-- App-Logo: Hotend-Düse (Heizblock, Messing-Nozzle), die eine Schicht druckt -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:fillColor="#FFFF7A1A" android:pathData="M54,30 L74,41 L54,52 L34,41 Z" />
-    <path android:fillColor="#FFD95F06" android:pathData="M34,41 L54,52 L54,74 L34,63 Z" />
-    <path android:fillColor="#FFFFA35C" android:pathData="M74,41 L54,52 L54,74 L74,63 Z" />
-    <path android:fillColor="#FFE6E8EC" android:pathData="M28,78 L80,78 L80,82 L28,82 Z" />
+    <!-- Heizblock -->
+    <path android:fillColor="#FFD9DDE4" android:pathData="M43,24 L65,24 Q68,24 68,27 L68,37 Q68,40 65,40 L43,40 Q40,40 40,37 L40,27 Q40,24 43,24 Z" />
+    <path android:fillColor="#FFB4BAC4" android:pathData="M58,24 L65,24 Q68,24 68,27 L68,37 Q68,40 65,40 L58,40 Z" />
+    <path android:fillColor="#FF5B636F" android:pathData="M44,32 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0 Z" />
+    <path android:fillColor="#FF5B636F" android:pathData="M60,30 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0 Z" />
+    <!-- Sechskant -->
+    <path android:fillColor="#FFF2B44E" android:pathData="M45,40 L63,40 L65,44 L63,48 L45,48 L43,44 Z" />
+    <path android:fillColor="#FFC98A2C" android:pathData="M57,40 L63,40 L65,44 L63,48 L57,48 Z" />
+    <!-- Düsenkegel -->
+    <path android:fillColor="#FFF7C062" android:pathData="M47,48 L61,48 L56,60 L52,60 Z" />
+    <path android:fillColor="#FFD0912F" android:pathData="M55,48 L61,48 L56,60 L54.5,60 Z" />
+    <path android:fillColor="#FFC98A2C" android:pathData="M52.5,60 L55.5,60 L55,63 L53,63 Z" />
+    <!-- Austretendes Filament -->
+    <path
+        android:pathData="M54,63 L54,67 Q54,71 58,71 L71,71"
+        android:strokeColor="#FFFF7A1A"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.5" />
+    <!-- Gedruckte Schichten -->
+    <path android:fillColor="#FFFF7A1A" android:pathData="M38,73 L70,73 Q72,73 72,75 Q72,77 70,77 L38,77 Q36,77 36,75 Q36,73 38,73 Z" />
+    <path android:fillColor="#FFD95F06" android:pathData="M40,78 L68,78 Q70,78 70,80 Q70,82 68,82 L40,82 Q38,82 38,80 Q38,78 40,78 Z" />
 </vector>

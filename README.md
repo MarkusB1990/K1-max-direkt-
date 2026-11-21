@@ -5,6 +5,9 @@ herunterladen, slicen und direkt an den Drucker schicken – alles vom Handy aus
 
 ## Vorschau
 
+![Logo](docs/screenshots/00_logo.png)
+
+
 | Entdecken | Bibliothek | 3D-Vorschau | Slicen |
 |---|---|---|---|
 | ![](docs/screenshots/01_entdecken.png) | ![](docs/screenshots/02_bibliothek.png) | ![](docs/screenshots/03_3d_vorschau.png) | ![](docs/screenshots/04_slicen.png) |
