@@ -234,7 +234,7 @@ async def slice_model(
             "--outputdir", str(outdir),
         ]
         if scale != 100:
-            args += ["--scale", f"{_clamp(scale, 1, 1000) / 100:.4f}"]
+            args += ["--scale", f"{_clamp(scale, 1, 2000) / 100:.4f}"]
         if rotate % 360:
             args += ["--rotate", str(rotate % 360)]
         args.append(str(src))
