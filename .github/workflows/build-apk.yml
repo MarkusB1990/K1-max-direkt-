@@ -11,6 +11,11 @@ on:
 permissions:
   contents: write
 
+# Nie zwei APK-Builds gleichzeitig – sonst kann ein älterer Build nach einem neueren fertig werden
+concurrency:
+  group: apk-build
+  cancel-in-progress: false
+
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -63,8 +68,14 @@ jobs:
                      "apk": f"K1MaxDirekt-{os.environ['VERSION']}.apk"}, open("out/version.json", "w"))
           PY
           printf '%s\n' "$NOTES" > out/notes.txt
+          # Nur als "neuestes" markieren, wenn es wirklich die höchste Version ist
+          HIGHEST=$(gh release list --limit 100 --json tagName --jq '[.[].tagName | ltrimstr("v") | split(".") | map(tonumber)] | max | map(tostring) | join(".")' 2>/dev/null || echo "")
+          LATEST_FLAG="--latest"
+          if [ -n "$HIGHEST" ] && [ "$(printf '%s\n%s\n' "$HIGHEST" "$VERSION" | sort -V | tail -1)" != "$VERSION" ]; then
+            LATEST_FLAG="--latest=false"
+          fi
           gh release create "v$VERSION" out/*.apk out/version.json \
-            --target "$GITHUB_SHA" --title "K1 Max Direkt $VERSION" --notes-file out/notes.txt --latest
+            --target "$GITHUB_SHA" --title "K1 Max Direkt $VERSION" --notes-file out/notes.txt $LATEST_FLAG
           # Nur die letzten 10 Releases behalten
           gh release list --limit 100 --json tagName --jq '.[10:][].tagName' | while read -r t; do
             gh release delete "$t" --yes --cleanup-tag || true

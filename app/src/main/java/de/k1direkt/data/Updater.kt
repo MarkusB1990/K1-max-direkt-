@@ -10,6 +10,7 @@ import de.k1direkt.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Request
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
@@ -38,12 +39,15 @@ object Updater {
 
     /** Liefert ein neueres Release oder null, wenn die App aktuell ist. */
     suspend fun check(): UpdateInfo? {
+        // Alle Releases holen und das mit der höchsten Version nehmen – das von GitHub als
+        // "latest" markierte kann bei gleichzeitig laufenden Builds ein älteres sein.
         val req = Request.Builder()
-            .url("https://api.github.com/repos/$REPO/releases/latest")
+            .url("https://api.github.com/repos/$REPO/releases?per_page=20")
             .header("Accept", "application/vnd.github+json")
             .header("User-Agent", "K1MaxDirekt-App")
             .build()
-        val release = JSONObject(Http.client.getText(req))
+        val releases = JSONArray(Http.client.getText(req))
+        val release = newestRelease(releases) ?: throw IOException("Keine Releases gefunden")
         val assets = release.optJSONArray("assets") ?: throw IOException("Release ohne Dateien")
         var apk: JSONObject? = null
         var versionJsonUrl: String? = null
@@ -66,6 +70,26 @@ object Updater {
             apkUrl = apk.optString("browser_download_url"),
             sizeBytes = apk.optLong("size"),
         )
+    }
+
+    /** Veröffentlichtes Release (kein Entwurf/Vorab) mit der höchsten Versionsnummer im Tag (vX.Y.Z). */
+    internal fun newestRelease(releases: JSONArray): JSONObject? =
+        (0 until releases.length())
+            .map { releases.getJSONObject(it) }
+            .filter { !it.optBoolean("draft") && !it.optBoolean("prerelease") }
+            .mapNotNull { r -> versionOf(r.optString("tag_name"))?.let { it to r } }
+            .maxWithOrNull { a, b -> compareVersions(a.first, b.first) }
+            ?.second
+
+    internal fun versionOf(tag: String): List<Int>? =
+        Regex("""^v?(\d+(?:\.\d+)*)$""").find(tag.trim())?.groupValues?.get(1)?.split('.')?.map { it.toInt() }
+
+    internal fun compareVersions(a: List<Int>, b: List<Int>): Int {
+        for (i in 0 until maxOf(a.size, b.size)) {
+            val d = (a.getOrElse(i) { 0 }).compareTo(b.getOrElse(i) { 0 })
+            if (d != 0) return d
+        }
+        return 0
     }
 
     /** Lädt das APK in den Cache (mit Fortschritt 0…1). */
