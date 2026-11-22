@@ -40,6 +40,9 @@ enum class ModelSite(
         "https://www.crealitycloud.com/search?keyword=%s&type=model", listOf("crealitycloud.com", "creality.com"),
     );
 
+    /** Logo (Favicon) der Seite – wird in der App geladen und zwischengespeichert. */
+    val logoUrl: String get() = "https://www.google.com/s2/favicons?domain=${hosts.first()}&sz=128"
+
     fun searchUrl(query: String): String =
         searchTemplate.format(URLEncoder.encode(query.trim(), "UTF-8").replace("+", "%20"))
 

@@ -229,7 +229,7 @@ class ModelRenderer : GLSurfaceView.Renderer {
                 vec3 n = normalize(vNormal);
                 float key = abs(dot(n, normalize(vec3(0.4, -0.5, 0.75))));
                 float fill = abs(dot(n, normalize(vec3(-0.6, 0.4, 0.3))));
-                vec3 base = vec3(1.0, 0.48, 0.10);
+                vec3 base = vec3(0.30, 0.56, 1.0);
                 gl_FragColor = vec4(base * (0.25 + 0.65 * key + 0.25 * fill), 1.0);
             }
         """

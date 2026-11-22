@@ -5,16 +5,21 @@ import android.graphics.BitmapFactory
 import de.k1direkt.data.Http
 import de.k1direkt.data.readable
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import okhttp3.Request
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /** Ergebnis eines Verbindungsversuchs – für die Fehleranzeige in der App. */
 data class CameraAttempt(val url: String, val error: String)
@@ -92,46 +97,77 @@ object MjpegStream {
         handle?.dispose()
     }
 
-    /** Sucht JPEG-Anfang (FF D8) und -Ende (FF D9) im Datenstrom – funktioniert unabhängig von den Multipart-Headern. */
-    private suspend fun readFrames(input: InputStream, url: String, onConnected: (String) -> Unit, onFrame: (Bitmap) -> Unit) {
-        val stream = input.buffered(64 * 1024)
-        val frame = ByteArrayOutputStream(256 * 1024)
-        var inFrame = false
-        var prev = -1
-        var connected = false
-        var lastDecode = 0L
-        var bytesWithoutFrame = 0L
-        while (true) {
-            currentCoroutineContext().ensureActive()
-            val b = stream.read()
-            if (b < 0) return
-            if (!inFrame) {
-                bytesWithoutFrame++
-                if (bytesWithoutFrame > 2_000_000) error("kein JPEG im Stream")
-                if (prev == 0xFF && b == 0xD8) {
-                    inFrame = true
-                    frame.reset()
-                    frame.write(0xFF); frame.write(0xD8)
-                }
-            } else {
-                frame.write(b)
-                if (prev == 0xFF && b == 0xD9) {
-                    inFrame = false
-                    bytesWithoutFrame = 0
-                    val now = System.currentTimeMillis()
-                    if (now - lastDecode >= 80) { // max. ~12 Bilder/s anzeigen
-                        lastDecode = now
-                        val bytes = frame.toByteArray()
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.let {
-                            if (!connected) { connected = true; onConnected(url) }
-                            onFrame(it)
-                        }
-                    }
-                } else if (frame.size() > 8_000_000) {
-                    inFrame = false // defektes Bild verwerfen
+    /**
+     * Sucht JPEG-Anfang (FF D8) und -Ende (FF D9) im Datenstrom – unabhängig von den Multipart-Headern.
+     * Lesen und Dekodieren laufen getrennt: Angezeigt wird immer nur das neueste vollständige Bild,
+     * dadurch kann sich keine Verzögerung aufstauen, wenn das Handy einmal langsamer dekodiert.
+     */
+    private suspend fun readFrames(input: InputStream, url: String, onConnected: (String) -> Unit, onFrame: (Bitmap) -> Unit) =
+        coroutineScope {
+            val latest = AtomicReference<ByteArray?>(null)
+            val connected = AtomicBoolean(false)
+            fun show(bytes: ByteArray) {
+                decode(bytes)?.let {
+                    if (connected.compareAndSet(false, true)) onConnected(url)
+                    onFrame(it)
                 }
             }
-            prev = b
+            val decoder = launch(Dispatchers.Default) {
+                while (isActive) {
+                    val bytes = latest.getAndSet(null)
+                    if (bytes == null) delay(10) else show(bytes)
+                }
+            }
+            try {
+                val buf = ByteArray(64 * 1024)
+                val frame = ByteArrayOutputStream(256 * 1024)
+                var inFrame = false
+                var prev = -1
+                var bytesWithoutFrame = 0L
+                while (true) {
+                    ensureActive()
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    var start = 0
+                    for (i in 0 until n) {
+                        val b = buf[i].toInt() and 0xFF
+                        if (!inFrame) {
+                            if (prev == 0xFF && b == 0xD8) {
+                                inFrame = true
+                                frame.reset()
+                                frame.write(0xFF); frame.write(0xD8)
+                                start = i + 1
+                            }
+                        } else if (prev == 0xFF && b == 0xD9) {
+                            frame.write(buf, start, i + 1 - start)
+                            latest.set(frame.toByteArray()) // älteres, noch nicht angezeigtes Bild wird verworfen
+                            inFrame = false
+                            bytesWithoutFrame = 0
+                        }
+                        prev = b
+                    }
+                    if (inFrame) {
+                        frame.write(buf, start, n - start)
+                        if (frame.size() > 8_000_000) inFrame = false // defektes Bild verwerfen
+                    } else {
+                        bytesWithoutFrame += n
+                        if (bytesWithoutFrame > 2_000_000) error("kein JPEG im Stream")
+                    }
+                }
+                // Stream zu Ende: letztes Bild noch anzeigen
+                latest.getAndSet(null)?.let { show(it) }
+            } finally {
+                decoder.cancel()
+            }
         }
+
+    /** Dekodiert ein JPEG; sehr große Kamerabilder werden für die Anzeige verkleinert. */
+    private fun decode(bytes: ByteArray): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0) return null
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= 1280) sample *= 2
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, BitmapFactory.Options().apply { inSampleSize = sample })
     }
 }

@@ -40,7 +40,7 @@ fun SoftwareMeshPreview(mesh: Mesh, modifier: Modifier = Modifier, yawDeg: Float
             val a = pt(t[0], t[1]); val b = pt(t[2], t[3]); val c = pt(t[4], t[5])
             path.moveTo(a.x, a.y); path.lineTo(b.x, b.y); path.lineTo(c.x, c.y); path.close()
             val k = t[6]
-            drawPath(path, Color(1.0f * k, 0.48f * k, 0.10f * k))
+            drawPath(path, Color(0.30f * k, 0.56f * k, 1.0f * k))
         }
     }
 }

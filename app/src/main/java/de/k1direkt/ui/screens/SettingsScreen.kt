@@ -50,7 +50,7 @@ import de.k1direkt.data.Updater
 import de.k1direkt.ui.UpdateUiState
 import de.k1direkt.ui.theme.K1Green
 import de.k1direkt.ui.AppViewModel
-import de.k1direkt.ui.theme.K1Blue
+import de.k1direkt.ui.theme.K1Teal
 import de.k1direkt.ui.theme.K1Purple
 
 @Composable
@@ -97,7 +97,7 @@ fun SettingsScreen(vm: AppViewModel) {
                     }
                 }
 
-                GroupCard("Slicer", Icons.Filled.Layers, K1Blue) {
+                GroupCard("Slicer", Icons.Filled.Layers, K1Teal) {
                     Field("Server-Adresse", s.slicerUrl, "http://192.168.178.93:8090") { s = s.copy(slicerUrl = it) }
                     Field("Zugangs-Token (optional)", s.slicerToken, "", secret = true) { s = s.copy(slicerToken = it) }
                     Hint("OrcaSlicer mit den offiziellen K1-Max-Profilen – z. B. als Home-Assistant-App „K1 Max Slicer“.")

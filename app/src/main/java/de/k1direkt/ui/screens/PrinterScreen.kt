@@ -85,7 +85,7 @@ import de.k1direkt.printer.PrintState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import de.k1direkt.ui.AppViewModel
-import de.k1direkt.ui.theme.K1Blue
+import de.k1direkt.ui.theme.K1Teal
 import de.k1direkt.ui.theme.K1Green
 import de.k1direkt.ui.theme.K1Orange
 import de.k1direkt.ui.theme.K1Purple
@@ -189,7 +189,7 @@ fun PrinterScreen(vm: AppViewModel) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatTile("Düse", formatTemp(status.nozzleTemp, status.nozzleTarget), Icons.Filled.LocalFireDepartment, K1Orange, Modifier.weight(1f))
                 StatTile("Bett", formatTemp(status.bedTemp, status.bedTarget), Icons.Filled.Thermostat, K1Purple, Modifier.weight(1f))
-                StatTile("Kammer", formatTemp(status.chamberTemp, null), Icons.Filled.ViewInAr, K1Blue, Modifier.weight(1f))
+                StatTile("Kammer", formatTemp(status.chamberTemp, null), Icons.Filled.ViewInAr, K1Teal, Modifier.weight(1f))
             }
 
             // ---------- Kamera
@@ -268,7 +268,7 @@ fun PrinterScreen(vm: AppViewModel) {
                 remoteFiles.take(30).forEach { f ->
                     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer) {
                         Row(Modifier.fillMaxWidth().padding(start = 14.dp, top = 10.dp, bottom = 10.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            IconBadge(Icons.Filled.Description, K1Blue, size = 38.dp)
+                            IconBadge(Icons.Filled.Description, K1Teal, size = 38.dp)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(f.path, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -317,7 +317,7 @@ fun PrinterScreen(vm: AppViewModel) {
 private fun stateColor(state: PrintState): Color = when (state) {
     PrintState.PRINTING -> K1Green
     PrintState.PAUSED -> Color(0xFFFFC94D)
-    PrintState.COMPLETE -> K1Blue
+    PrintState.COMPLETE -> K1Teal
     PrintState.ERROR, PrintState.CANCELLED -> MaterialTheme.colorScheme.error
     PrintState.OFFLINE -> MaterialTheme.colorScheme.onSurfaceVariant
     PrintState.STANDBY -> MaterialTheme.colorScheme.onSurface

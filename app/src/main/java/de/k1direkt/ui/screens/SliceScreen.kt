@@ -67,7 +67,7 @@ import de.k1direkt.ui.AppViewModel
 import de.k1direkt.ui.Navigator
 import de.k1direkt.ui.SliceUiState
 import de.k1direkt.ui.Tab
-import de.k1direkt.ui.theme.K1Blue
+import de.k1direkt.ui.theme.K1Teal
 import de.k1direkt.ui.theme.K1Green
 import java.util.Locale
 
@@ -284,7 +284,7 @@ private fun SliceDone(result: SliceResult, onPrint: () -> Unit, onUpload: () -> 
                     result.filamentMeters?.let { String.format(Locale.GERMANY, "%.1f m", it) },
                 ).joinToString(" · ").ifBlank { "–" },
                 Icons.Filled.Scale,
-                K1Blue,
+                K1Teal,
                 Modifier.weight(1f),
             )
         }

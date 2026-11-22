@@ -64,8 +64,8 @@ import de.k1direkt.ui.AppViewModel
 import de.k1direkt.ui.Navigator
 import de.k1direkt.ui.Overlay
 import de.k1direkt.ui.theme.K1Blue
-import de.k1direkt.ui.theme.K1Orange
 import de.k1direkt.ui.theme.K1Purple
+import de.k1direkt.ui.theme.K1Teal
 
 private enum class LibFilter(val label: String) { ALL("Alle"), MODELS("3D-Modelle"), GCODE("Druckfertig"), OWN("Eigene") }
 
@@ -76,9 +76,9 @@ private fun typeIcon(t: FileType): ImageVector = when (t) {
 }
 
 private fun typeColor(t: FileType): Color = when (t) {
-    FileType.GCODE -> K1Blue
+    FileType.GCODE -> K1Teal
     FileType.THREE_MF -> K1Purple
-    else -> K1Orange
+    else -> K1Blue
 }
 
 /** Was passiert beim Antippen einer Datei. */

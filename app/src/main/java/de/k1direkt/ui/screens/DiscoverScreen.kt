@@ -1,5 +1,6 @@
 package de.k1direkt.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -63,6 +66,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import de.k1direkt.sources.ModelSite
 import de.k1direkt.sources.SearchResult
 import de.k1direkt.sources.UnifiedSearch
@@ -232,18 +238,29 @@ private fun SiteTile(site: ModelSite, onClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(56.dp).clip(RoundedCornerShape(18.dp)).background(Color(site.color).copy(alpha = 0.18f)),
+            Modifier.size(56.dp).clip(RoundedCornerShape(18.dp)).background(Color.White),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                site.displayName.take(1),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color(site.color),
-            )
+            SiteLogo(site, Modifier.size(36.dp))
         }
         Spacer(Modifier.height(6.dp))
         Text(site.displayName, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+/** Logo der Seite; solange es lädt oder falls es fehlt: farbiger Anfangsbuchstabe. */
+@Composable
+fun SiteLogo(site: ModelSite, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    // feste Größe → das Laden startet sofort, unabhängig vom Zeichnen
+    val request = remember(site) { ImageRequest.Builder(context).data(site.logoUrl).size(128).crossfade(true).build() }
+    val painter = rememberAsyncImagePainter(request)
+    Box(modifier, contentAlignment = Alignment.Center) {
+        if (painter.state is AsyncImagePainter.State.Success) {
+            Image(painter, site.displayName, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+        } else {
+            Text(site.displayName.take(1), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color(site.color))
+        }
     }
 }
 
@@ -269,15 +286,15 @@ private fun ResultCard(r: SearchResult, onClick: () -> Unit) {
                         Icon(Icons.Filled.ViewInAr, null, Modifier.size(48.dp), tint = Color.White.copy(alpha = 0.8f))
                     }
                 }
-                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(8.dp).clip(CircleShape).background(Color(r.site.color)))
+                Row(
+                    Modifier.padding(8.dp).clip(RoundedCornerShape(8.dp)).background(Color.Black.copy(alpha = 0.55f)).padding(horizontal = 6.dp, vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Box(Modifier.size(16.dp).clip(RoundedCornerShape(4.dp)).background(Color.White), contentAlignment = Alignment.Center) {
+                        SiteLogo(r.site, Modifier.size(12.dp))
+                    }
                     Spacer(Modifier.width(5.dp))
-                    Text(
-                        r.site.displayName,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White,
-                        modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(Color.Black.copy(alpha = 0.45f)).padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
+                    Text(r.site.displayName, style = MaterialTheme.typography.labelSmall, color = Color.White)
                 }
             }
             Column(Modifier.padding(12.dp)) {

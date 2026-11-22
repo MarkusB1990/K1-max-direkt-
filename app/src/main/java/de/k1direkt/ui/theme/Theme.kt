@@ -14,20 +14,23 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-val K1Orange = Color(0xFFFF7A1A)
+/** Hauptfarbe der App */
+val K1Blue = Color(0xFF4C8DFF)
+/** Wärme (Düse/Heizung) */
+val K1Orange = Color(0xFFFF8A3D)
 val K1Green = Color(0xFF3DDC84)
-val K1Blue = Color(0xFF5B9BFF)
+val K1Teal = Color(0xFF3ECFC0)
 val K1Purple = Color(0xFFB388FF)
 
 private val Dark = darkColorScheme(
-    primary = K1Orange,
-    onPrimary = Color(0xFF1F0E00),
-    primaryContainer = Color(0xFF4A2508),
-    onPrimaryContainer = Color(0xFFFFDCC6),
-    secondary = K1Blue,
-    onSecondary = Color(0xFF00214D),
-    secondaryContainer = Color(0xFF1C2C46),
-    onSecondaryContainer = Color(0xFFD6E3FF),
+    primary = K1Blue,
+    onPrimary = Color(0xFF001A43),
+    primaryContainer = Color(0xFF173563),
+    onPrimaryContainer = Color(0xFFD9E5FF),
+    secondary = K1Teal,
+    onSecondary = Color(0xFF00201D),
+    secondaryContainer = Color(0xFF113A37),
+    onSecondaryContainer = Color(0xFFC6F5EE),
     tertiary = K1Purple,
     background = Color(0xFF0E1014),
     onBackground = Color(0xFFE8EAEF),
@@ -46,12 +49,12 @@ private val Dark = darkColorScheme(
 )
 
 private val Light = lightColorScheme(
-    primary = Color(0xFFE0650E),
+    primary = Color(0xFF1F64D8),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFFFDCC6),
-    onPrimaryContainer = Color(0xFF331200),
-    secondary = Color(0xFF2F5FBF),
-    secondaryContainer = Color(0xFFDCE6FF),
+    primaryContainer = Color(0xFFD9E5FF),
+    onPrimaryContainer = Color(0xFF001A43),
+    secondary = Color(0xFF00897B),
+    secondaryContainer = Color(0xFFC6F5EE),
     tertiary = Color(0xFF7A4FD6),
     background = Color(0xFFF6F7F9),
     surface = Color(0xFFF6F7F9),
