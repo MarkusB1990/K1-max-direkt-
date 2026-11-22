@@ -107,7 +107,7 @@ fun SettingsScreen(vm: AppViewModel) {
                 }
 
                 GroupCard("Zugänge für die Suche", Icons.Filled.Key, K1Purple) {
-                    Hint("Optional. Printables geht ohne Zugang; alle Seiten funktionieren auch im eingebauten Browser.")
+                    Hint("Optional. MakerWorld und Printables suchen ohne Zugang mit; alle Seiten funktionieren auch im eingebauten Browser.")
                     Field("Thingiverse App-Token", s.thingiverseToken, "", secret = true) { s = s.copy(thingiverseToken = it) }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Field("Cults3D Benutzer", s.cultsUser, "", Modifier.weight(1f)) { s = s.copy(cultsUser = it) }

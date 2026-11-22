@@ -34,6 +34,7 @@ data class ProviderOutcome(
 
 object UnifiedSearch {
     val providers: List<SearchProvider> = listOf(
+        MakerWorldProvider,
         PrintablesProvider,
         ThingiverseProvider,
         Cults3DProvider,
@@ -64,6 +65,41 @@ private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
 private fun JSONObject.str(key: String): String? = if (isNull(key)) null else optString(key).ifBlank { null }
 private fun JSONObject.intOrNull(key: String): Int? = if (has(key) && !isNull(key)) optInt(key) else null
 private fun JSONArray.objects(): List<JSONObject> = (0 until length()).mapNotNull { optJSONObject(it) }
+
+/**
+ * MakerWorld (Bambu Lab) – keine offizielle API; genutzt wird die Such-Schnittstelle, die auch
+ * die Bambu-Handy-App verwendet (api.bambulab.com, ohne Login). Kann sich ohne Ankündigung ändern.
+ */
+object MakerWorldProvider : SearchProvider {
+    override val site = ModelSite.MAKERWORLD
+    private const val PAGE_SIZE = 24
+
+    override fun missingConfig(settings: AppSettings): String? = null
+
+    override suspend fun search(query: String, page: Int, settings: AppSettings): List<SearchResult> {
+        val req = Request.Builder()
+            .url("https://api.bambulab.com/v1/search-service/select/design2?keyword=${enc(query)}&limit=$PAGE_SIZE&offset=${page * PAGE_SIZE}")
+            .header("User-Agent", Http.USER_AGENT)
+            .header("Accept", "application/json")
+            .build()
+        val hits = JSONObject(Http.client.getText(req)).optJSONArray("hits") ?: JSONArray()
+        return parse(hits)
+    }
+
+    internal fun parse(hits: JSONArray): List<SearchResult> = hits.objects().mapNotNull { o ->
+        val id = o.optLong("id").takeIf { it > 0 } ?: return@mapNotNull null
+        SearchResult(
+            site = site,
+            id = id.toString(),
+            title = o.str("title") ?: o.str("titleTranslated") ?: "Modell $id",
+            author = o.optJSONObject("designCreator")?.str("name"),
+            imageUrl = o.str("cover"),
+            pageUrl = "https://makerworld.com/de/models/$id",
+            likes = o.intOrNull("likeCount"),
+            downloads = o.intOrNull("downloadCount"),
+        )
+    }
+}
 
 /** Printables (Prusa) – öffentliche GraphQL-Schnittstelle, kein Schlüssel nötig. */
 object PrintablesProvider : SearchProvider {
