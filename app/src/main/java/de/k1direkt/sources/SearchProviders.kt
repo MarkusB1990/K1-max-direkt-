@@ -116,10 +116,13 @@ object MakerWorldProvider : SearchProvider {
 /** Printables (Prusa) – öffentliche GraphQL-Schnittstelle, kein Schlüssel nötig. */
 object PrintablesProvider : SearchProvider {
     override val site = ModelSite.PRINTABLES
+    @Volatile private var total: Int? = null
+    override val lastTotal: Int? get() = total
     private const val PAGE_SIZE = 24
     private val QUERY = """
         query SearchModels(${'$'}query: String!, ${'$'}limit: Int, ${'$'}offset: Int) {
           result: searchPrints2(query: ${'$'}query, limit: ${'$'}limit, offset: ${'$'}offset) {
+            totalCount
             items { id name slug likesCount downloadCount image { filePath } user { publicUsername } }
           }
         }
@@ -143,7 +146,9 @@ object PrintablesProvider : SearchProvider {
         json.optJSONArray("errors")?.let { errs ->
             if (errs.length() > 0) throw IllegalStateException(errs.optJSONObject(0)?.optString("message") ?: "GraphQL-Fehler")
         }
-        val items = json.optJSONObject("data")?.optJSONObject("result")?.optJSONArray("items") ?: JSONArray()
+        val result = json.optJSONObject("data")?.optJSONObject("result")
+        total = result?.optInt("totalCount", -1)?.takeIf { it >= 0 }
+        val items = result?.optJSONArray("items") ?: JSONArray()
         return items.objects().map { o ->
             val id = o.optString("id")
             val slug = o.optString("slug")
@@ -242,6 +247,8 @@ object Cults3DProvider : SearchProvider {
 /** MyMiniFactory – REST-API v2, benötigt einen API-Key. */
 object MyMiniFactoryProvider : SearchProvider {
     override val site = ModelSite.MYMINIFACTORY
+    @Volatile private var total: Int? = null
+    override val lastTotal: Int? get() = total
 
     override fun missingConfig(settings: AppSettings) =
         if (settings.myMiniFactoryKey.isBlank()) "API-Key in den Einstellungen eintragen" else null
@@ -251,7 +258,9 @@ object MyMiniFactoryProvider : SearchProvider {
             .url("https://www.myminifactory.com/api/v2/search?q=${enc(query)}&per_page=24&page=${page + 1}&key=${enc(settings.myMiniFactoryKey)}")
             .header("Accept", "application/json")
             .build()
-        val items = JSONObject(Http.client.getText(req)).optJSONArray("items") ?: JSONArray()
+        val json = JSONObject(Http.client.getText(req))
+        total = json.optInt("total_count", -1).takeIf { it >= 0 }
+        val items = json.optJSONArray("items") ?: JSONArray()
         return items.objects().map { o ->
             val img = o.optJSONArray("images")?.optJSONObject(0)
             SearchResult(

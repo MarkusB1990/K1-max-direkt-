@@ -72,6 +72,7 @@ import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import de.k1direkt.sources.ModelSite
+import de.k1direkt.sources.ProviderOutcome
 import de.k1direkt.sources.SearchResult
 import de.k1direkt.sources.UnifiedSearch
 import de.k1direkt.ui.AppViewModel
@@ -159,7 +160,7 @@ fun DiscoverScreen(vm: AppViewModel, nav: Navigator) {
                             FilterChip(
                                 selected = state.filter == null,
                                 onClick = { vm.setSearchFilter(null) },
-                                label = { Text("Alle · ${allResults.size}") },
+                                label = { Text("Alle · ${countLabel(state.outcomes.filter { it.results.isNotEmpty() })}") },
                                 shape = RoundedCornerShape(50),
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer),
                             )
@@ -168,20 +169,11 @@ fun DiscoverScreen(vm: AppViewModel, nav: Navigator) {
                             FilterChip(
                                 selected = state.filter == o.site,
                                 onClick = { vm.setSearchFilter(o.site) },
-                                label = { Text("${o.site.displayName} · ${o.results.size}") },
+                                label = { Text("${o.site.displayName} · ${countLabel(listOf(o))}") },
                                 shape = RoundedCornerShape(50),
                                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primaryContainer),
                             )
                         }
-                    }
-                    val totals = state.outcomes.filter { it.total != null && it.results.isNotEmpty() }
-                    if (totals.isNotEmpty()) {
-                        Text(
-                            "Insgesamt: " + totals.joinToString(" · ") { "${it.site.displayName} ${"%,d".format(Locale.GERMANY, it.total ?: 0)} Treffer" },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 8.dp),
-                        )
                     }
                     val missing = state.outcomes.filter { it.skipped != null }.map { it.site.displayName }
                     val failed = state.outcomes.filter { it.error != null }.map { it.site.displayName }
@@ -242,6 +234,20 @@ fun DiscoverScreen(vm: AppViewModel, nav: Navigator) {
             }
         }
     }
+}
+
+/** Trefferzahl für die Filter: Gesamtzahl der Plattform, sonst geladene Anzahl (mit „+“, wenn es mehr gibt). */
+private fun countLabel(outcomes: List<ProviderOutcome>): String {
+    var sum = 0L
+    var open = false
+    for (o in outcomes) {
+        val t = o.total
+        if (t != null) sum += maxOf(t, o.results.size) else {
+            sum += o.results.size
+            if (!o.exhausted && o.results.isNotEmpty()) open = true
+        }
+    }
+    return "%,d".format(Locale.GERMANY, sum) + if (open) "+" else ""
 }
 
 /** Mischt die Ergebnislisten abwechselnd, damit keine Seite die Liste dominiert. */
