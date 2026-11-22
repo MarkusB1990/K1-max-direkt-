@@ -347,6 +347,20 @@ private fun ToolChip(label: String, icon: androidx.compose.ui.graphics.vector.Im
     )
 }
 
+/** Verständliche Erklärung für typische Fehlerbilder der K1-Max-Kamera. */
+private fun cameraHint(fails: List<CameraAttempt>): String? {
+    val refused = fails.any { ":8080" in it.url && "Keine Verbindung" in it.error }
+    val badGateway = fails.any { "HTTP 502" in it.error }
+    return when {
+        refused && badGateway ->
+            "Der Kamera-Dienst am Drucker läuft gerade nicht (Fluidd/Mainsail erreichen ihn auch nicht). " +
+                "Nach dem Druck den Drucker aus- und wieder einschalten – nicht während eines Drucks."
+        fails.all { "Keine Verbindung" in it.error || "Zeitüberschreitung" in it.error || "Adresse unbekannt" in it.error } ->
+            "Der Drucker ist nicht erreichbar – stimmt die IP-Adresse und ist das Handy im selben WLAN?"
+        else -> null
+    }
+}
+
 /** Kamerabild: eigener MJPEG-Player mit Fehleranzeige pro probierter Adresse. */
 @Composable
 private fun MjpegView(urls: List<String>, modifier: Modifier) {
@@ -375,6 +389,10 @@ private fun MjpegView(urls: List<String>, modifier: Modifier) {
         when {
             fails != null && f == null -> Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("Kamera nicht erreichbar", style = MaterialTheme.typography.titleSmall, color = Color.White)
+                cameraHint(fails)?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = Color(0xFFFFC94D), textAlign = TextAlign.Center)
+                }
                 Spacer(Modifier.height(8.dp))
                 fails.forEach {
                     Text("${it.url.removePrefix("http://")}\n→ ${it.error}", style = MaterialTheme.typography.bodySmall, color = Color(0xFFBBBBBB), textAlign = TextAlign.Center)

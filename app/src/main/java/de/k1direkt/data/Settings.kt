@@ -50,7 +50,7 @@ data class AppSettings(
             "http://$h:4408/webcam/?action=stream",   // Fluidd (Helper Script)
             "http://$h:4409/webcam/?action=stream",   // Mainsail
             "http://$h/webcam/?action=stream",
-        )).distinct()
+        )).distinctBy { it.replace("/webcam/?", "/webcam?") }
     }
 }
 
