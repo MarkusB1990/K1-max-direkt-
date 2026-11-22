@@ -50,10 +50,16 @@ import java.io.IOException
 data class SearchState(
     val query: String = "",
     val loading: Boolean = false,
+    val loadingMore: Boolean = false,
     val page: Int = 0,
     val outcomes: List<ProviderOutcome> = emptyList(),
     val filter: ModelSite? = null,
-)
+) {
+    /** Gibt es bei mindestens einer Plattform noch weitere Treffer? */
+    val canLoadMore: Boolean
+        get() = outcomes.any { it.error == null && it.skipped == null && !it.exhausted && it.results.isNotEmpty() &&
+            (it.total == null || it.results.size < it.total) }
+}
 
 data class TransferState(
     val active: Boolean = false,
@@ -165,13 +171,38 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSearchFilter(site: ModelSite?) { _search.value = _search.value.copy(filter = site) }
 
-    fun search(query: String, page: Int = 0) {
+    fun search(query: String) {
         if (query.isBlank()) return
         searchJob?.cancel()
-        _search.value = _search.value.copy(query = query, loading = true, page = page)
+        _search.value = _search.value.copy(query = query, loading = true, loadingMore = false, page = 0, outcomes = emptyList())
         searchJob = viewModelScope.launch {
-            val outcomes = UnifiedSearch.search(query.trim(), page, settings.value)
+            val outcomes = UnifiedSearch.search(query.trim(), 0, settings.value)
             _search.value = _search.value.copy(loading = false, outcomes = outcomes)
+        }
+    }
+
+    /** Lädt die nächste Seite und hängt die Treffer an (Endlos-Scrollen). */
+    fun loadMore() {
+        val st = _search.value
+        if (st.loading || st.loadingMore || !st.canLoadMore) return
+        val sites = st.outcomes.filter { it.error == null && it.skipped == null && !it.exhausted && it.results.isNotEmpty() &&
+            (it.total == null || it.results.size < it.total) }.map { it.site }.toSet()
+        val next = st.page + 1
+        _search.value = st.copy(loadingMore = true)
+        searchJob = viewModelScope.launch {
+            val fresh = UnifiedSearch.search(st.query.trim(), next, settings.value, sites).associateBy { it.site }
+            val cur = _search.value
+            if (cur.query != st.query) return@launch
+            val merged = cur.outcomes.map { old ->
+                val n = fresh[old.site] ?: return@map old
+                if (n.error != null) old.copy(exhausted = true)
+                else {
+                    val known = old.results.map { it.id }.toHashSet()
+                    val added = n.results.filter { it.id !in known }
+                    old.copy(results = old.results + added, total = n.total ?: old.total, exhausted = added.isEmpty())
+                }
+            }
+            _search.value = cur.copy(outcomes = merged, page = next, loadingMore = false)
         }
     }
 

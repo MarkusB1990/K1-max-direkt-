@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -52,6 +53,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +77,7 @@ import de.k1direkt.sources.UnifiedSearch
 import de.k1direkt.ui.AppViewModel
 import de.k1direkt.ui.Navigator
 import de.k1direkt.ui.Overlay
+import java.util.Locale
 
 @Composable
 fun DiscoverScreen(vm: AppViewModel, nav: Navigator) {
@@ -88,8 +91,19 @@ fun DiscoverScreen(vm: AppViewModel, nav: Navigator) {
     val shown = state.filter?.let { f -> allResults.filter { it.site == f } } ?: allResults
     val hasSearch = state.outcomes.isNotEmpty() || state.loading
 
+    val gridState = rememberLazyGridState()
+    // Endlos-Scrollen: kurz vor dem Ende die nächsten Treffer nachladen
+    LaunchedEffect(gridState, state.canLoadMore) {
+        snapshotFlow {
+            val info = gridState.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull()?.index ?: 0
+            info.totalItemsCount > 0 && last >= info.totalItemsCount - 6
+        }.collect { nearEnd -> if (nearEnd) vm.loadMore() }
+    }
+
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 160.dp),
+        state = gridState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = ScreenPadding, end = ScreenPadding, bottom = 24.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -160,6 +174,15 @@ fun DiscoverScreen(vm: AppViewModel, nav: Navigator) {
                             )
                         }
                     }
+                    val totals = state.outcomes.filter { it.total != null && it.results.isNotEmpty() }
+                    if (totals.isNotEmpty()) {
+                        Text(
+                            "Insgesamt: " + totals.joinToString(" · ") { "${it.site.displayName} ${"%,d".format(Locale.GERMANY, it.total ?: 0)} Treffer" },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                        )
+                    }
                     val missing = state.outcomes.filter { it.skipped != null }.map { it.site.displayName }
                     val failed = state.outcomes.filter { it.error != null }.map { it.site.displayName }
                     val webOnly = ModelSite.entries.filter { it !in apiSites }
@@ -208,13 +231,11 @@ fun DiscoverScreen(vm: AppViewModel, nav: Navigator) {
                 items(shown, key = { "${it.site.name}-${it.id}-${it.pageUrl}" }) { r ->
                     ResultCard(r) { nav.open(Overlay.Browser(r.pageUrl)) }
                 }
-                if (allResults.isNotEmpty()) {
+                if (allResults.isNotEmpty() && (state.loadingMore || state.canLoadMore)) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            if (state.page > 0) {
-                                OutlinedButton(onClick = { vm.search(state.query, state.page - 1) }, Modifier.weight(1f)) { Text("Zurück") }
-                            }
-                            OutlinedButton(onClick = { vm.search(state.query, state.page + 1) }, Modifier.weight(1f)) { Text("Mehr laden") }
+                        Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                            if (state.loadingMore) CircularProgressIndicator(Modifier.size(28.dp))
+                            else OutlinedButton(onClick = { vm.loadMore() }) { Text("Mehr laden") }
                         }
                     }
                 }

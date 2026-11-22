@@ -23,6 +23,9 @@ interface SearchProvider {
     fun missingConfig(settings: AppSettings): String?
 
     suspend fun search(query: String, page: Int, settings: AppSettings): List<SearchResult>
+
+    /** Gesamtzahl der Treffer der letzten Suche, falls die Plattform sie liefert. */
+    val lastTotal: Int? get() = null
 }
 
 data class ProviderOutcome(
@@ -30,6 +33,10 @@ data class ProviderOutcome(
     val results: List<SearchResult> = emptyList(),
     val error: String? = null,
     val skipped: String? = null,
+    /** Gesamtzahl der Treffer bei der Plattform (falls bekannt) */
+    val total: Int? = null,
+    /** Keine weiteren Seiten mehr verfügbar */
+    val exhausted: Boolean = false,
 )
 
 object UnifiedSearch {
@@ -41,16 +48,17 @@ object UnifiedSearch {
         MyMiniFactoryProvider,
     )
 
-    /** Fragt alle Anbieter parallel ab; Fehler einzelner Seiten brechen die Suche nicht ab. */
-    suspend fun search(query: String, page: Int, settings: AppSettings): List<ProviderOutcome> = coroutineScope {
-        providers.map { p ->
+    /** Fragt alle (bzw. die gewählten) Anbieter parallel ab; Fehler einzelner Seiten brechen die Suche nicht ab. */
+    suspend fun search(query: String, page: Int, settings: AppSettings, sites: Set<ModelSite>? = null): List<ProviderOutcome> = coroutineScope {
+        providers.filter { sites == null || it.site in sites }.map { p ->
             async {
                 val missing = p.missingConfig(settings)
                 if (missing != null) {
                     ProviderOutcome(p.site, skipped = missing)
                 } else {
                     try {
-                        ProviderOutcome(p.site, results = withTimeout(25_000) { p.search(query, page, settings) })
+                        val results = withTimeout(25_000) { p.search(query, page, settings) }
+                        ProviderOutcome(p.site, results = results, total = p.lastTotal, exhausted = results.isEmpty())
                     } catch (e: Exception) {
                         ProviderOutcome(p.site, error = e.readable())
                     }
@@ -82,9 +90,13 @@ object MakerWorldProvider : SearchProvider {
             .header("User-Agent", Http.USER_AGENT)
             .header("Accept", "application/json")
             .build()
-        val hits = JSONObject(Http.client.getText(req)).optJSONArray("hits") ?: JSONArray()
-        return parse(hits)
+        val json = JSONObject(Http.client.getText(req))
+        total = json.optInt("total", -1).takeIf { it >= 0 }
+        return parse(json.optJSONArray("hits") ?: JSONArray())
     }
+
+    @Volatile private var total: Int? = null
+    override val lastTotal: Int? get() = total
 
     internal fun parse(hits: JSONArray): List<SearchResult> = hits.objects().mapNotNull { o ->
         val id = o.optLong("id").takeIf { it > 0 } ?: return@mapNotNull null
@@ -152,6 +164,8 @@ object PrintablesProvider : SearchProvider {
 /** Thingiverse – offizielle REST-API, benötigt ein kostenloses App-Token. */
 object ThingiverseProvider : SearchProvider {
     override val site = ModelSite.THINGIVERSE
+    @Volatile private var total: Int? = null
+    override val lastTotal: Int? get() = total
 
     override fun missingConfig(settings: AppSettings) =
         if (settings.thingiverseToken.isBlank()) "App-Token in den Einstellungen eintragen" else null
@@ -162,7 +176,9 @@ object ThingiverseProvider : SearchProvider {
             .header("Authorization", "Bearer ${settings.thingiverseToken}")
             .build()
         val text = Http.client.getText(req)
-        val hits = if (text.trimStart().startsWith("[")) JSONArray(text) else JSONObject(text).optJSONArray("hits") ?: JSONArray()
+        val hits = if (text.trimStart().startsWith("[")) JSONArray(text) else JSONObject(text).also {
+            total = it.optInt("total", -1).takeIf { t -> t >= 0 }
+        }.optJSONArray("hits") ?: JSONArray()
         return hits.objects().map { o ->
             val id = o.optString("id")
             SearchResult(
