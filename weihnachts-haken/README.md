@@ -8,7 +8,25 @@ Drei Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
 | `stl/wandhaken_schrauben_holz-fassade.stl` | Zum **Anschrauben** an Holz (Balken, Verkleidung, Fensterrahmen) oder mit Dübel an die Fassade |
 | `stl/wandhaken_kleben_fassade.stl` | Zum **Ankleben** mit doppelseitigem Outdoor-Klebeband (glatte Fassade, Fensterrahmen, Kunststoff) |
 
-`haken.scad` ist die parametrische Quelldatei (OpenSCAD). Damit lassen sich alle Maße anpassen.
+Die Haken sind mit **[SolidCraft](https://solidcraft.io)** (Version 0.49.1) gebaut.
+
+| Ordner | Inhalt |
+|---|---|
+| `solidcraft/*.sc` | SolidCraft-Konstruktionen mit allen Maßen als Parameter. Öffne sie in SolidCraft (Desktop oder [Browser](https://solidcraft.io/app)) und ändere die Werte unter **Parameters**. |
+| `solidcraft/*.json` | Die Bauanleitung als SolidCraft-Skript, aus dem die `.sc`-Dateien entstehen |
+| `stl/` | Druckfertige STL-Dateien |
+| `step/` | Dieselben Teile als STEP, falls du sie in einem anderen CAD weiterbearbeiten willst |
+| `haken.scad` | Ältere OpenSCAD-Version mit denselben Maßen (nur als Alternative) |
+
+### Maße in SolidCraft ändern
+
+In der App: `.sc`-Datei öffnen, dann **Parameters** öffnen. Die wichtigsten Werte sind als Favoriten markiert, zum Beispiel `wulst_d`, `spiel` und `untergriff` beim Dachrinnen-Haken. Ändere einen Wert, und das Modell baut sich neu auf. Danach als STL exportieren.
+
+Auf der Kommandozeile geht es genauso:
+```
+solidcraft-cli run --in solidcraft/dachrinnen-haken.sc --param "wulst_d=19 mm" --out mein-haken.stl
+```
+Mit `solidcraft-cli run solidcraft/dachrinnen-haken.json --save dachrinnen-haken.sc` entsteht die Konstruktion neu aus dem Skript.
 
 ## 1. Dachrinnen-Haken
 
@@ -24,11 +42,7 @@ Drei Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
 
 Anbringen: das Bein zuerst innen in die Rinne einführen, dann den Haken vorne über den Wulst drücken, bis er einrastet. Ein Haken alle 30–50 cm reicht.
 
-Für eine andere Wulstgröße:
-```
-openscad -D 'teil="rinne"' -D wulst_d=19 -o mein-haken.stl haken.scad
-```
-Sitzt der Haken zu fest oder zu locker, kannst du `spiel` (Standard 0,6 mm) oder `untergriff` (Standard 40°) ändern.
+Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` (siehe oben). Sitzt der Haken zu fest oder zu locker, kannst du `spiel` (Standard 0,6 mm) oder `untergriff` (Standard 40°) ändern.
 
 ## 2. Wandhaken zum Schrauben (Holz / Fassade)
 

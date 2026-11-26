@@ -1,0 +1,19 @@
+{"commands": [
+  {"command": "parameters.add", "params": {"name": "platte_b", "expression": "24 mm", "comment": "Breite der Grundplatte", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "platte_h", "expression": "40 mm", "comment": "Hoehe der Grundplatte (an der Wand)", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "platte_t", "expression": "4 mm", "comment": "Dicke der Grundplatte"}},
+  {"command": "parameters.add", "params": {"name": "t", "expression": "3 mm", "comment": "Staerke von Arm und Lippe"}},
+  {"command": "parameters.add", "params": {"name": "arm_l", "expression": "14 mm", "comment": "Abstand Kabelauflage von der Wand", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "lippe_h", "expression": "5 mm", "comment": "Hoehe der vorderen Lippe ueber dem Arm", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "kehle", "expression": "2.5 mm", "comment": "Hohlkehle am Uebergang Platte/Arm"}},
+  {"command": "parameters.add", "params": {"name": "arm_y", "expression": "(platte_h - t) / 2", "comment": "Lage des Arms auf der Platte (von unten)"}},
+  {"command": "parameters.add", "params": {"name": "l", "expression": "arm_l + t", "comment": "Armlaenge ab Plattenoberseite"}},
+  {"command": "sketch.create", "params": {"plane": "XY", "name": "Grundplatte"}},
+  {"command": "sketch.rectangle.rounded", "params": {"p0": [0, 0], "p1": ["platte_b", "platte_h"], "radius": "3 mm"}},
+  {"command": "sketch.finish", "params": {}},
+  {"command": "solid.extrude", "params": {"distance": "platte_t", "operation": "new", "name": "Grundplatte", "body_name": "Wandhaken"}},
+  {"command": "sketch.create", "params": {"plane": "YZ", "name": "Arm mit Lippe"}},
+  {"command": "sketch.line", "params": {"closed": true, "points": [["arm_y - kehle", "platte_t"], ["arm_y + t + kehle", "platte_t"], ["arm_y + t", "platte_t + kehle"], ["arm_y + t", "platte_t + l - t - lippe_h"], ["arm_y + t + lippe_h", "platte_t + l - t"], ["arm_y + t + lippe_h", "platte_t + l"], ["arm_y", "platte_t + l"], ["arm_y", "platte_t + kehle"]]}},
+  {"command": "sketch.finish", "params": {}},
+  {"command": "solid.extrude", "params": {"distance": "platte_b", "operation": "join", "targets": ["Wandhaken"], "name": "Arm mit Lippe"}}
+]}
