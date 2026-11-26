@@ -22,7 +22,7 @@ Die Haken sind mit **[SolidCraft](https://solidcraft.io)** (Version 0.49.1) geba
 
 ### Maße in SolidCraft ändern
 
-In der App: `.sc`-Datei öffnen, dann **Parameters** öffnen. Die wichtigsten Werte sind als Favoriten markiert, zum Beispiel `wulst_d`, `spiel` und `untergriff` beim Dachrinnen-Haken oder `kabel_d` und `oeffnung` beim Wandclip oder `draht_d` und `stab_d` beim Zaunhaken. Ändere einen Wert, und das Modell baut sich neu auf. Danach als STL exportieren.
+In der App: `.sc`-Datei öffnen, dann **Parameters** öffnen. Die wichtigsten Werte sind als Favoriten markiert, zum Beispiel `wulst_d`, `spiel` und `untergriff` beim Dachrinnen-Haken oder `kabel_d` und `oeffnung` beim Wandclip oder `gesamt_b` und `draht_d` beim Zaunhaken. Ändere einen Wert, und das Modell baut sich neu auf. Danach als STL exportieren.
 
 Auf der Kommandozeile geht es genauso:
 ```
