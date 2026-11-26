@@ -2,4 +2,4 @@
 
 Druckvorlagen für den Creality K1 Max.
 
-- [`weihnachts-haken/`](weihnachts-haken/README.md): Haken und Clips für LED-Lichterketten (Dachrinne, Holz, Fassade), konstruiert mit SolidCraft
+- [`weihnachts-haken/`](weihnachts-haken/README.md): Haken und Clips für LED-Lichterketten (Dachrinne, Doppelstabzaun, Holz, Fassade), konstruiert mit SolidCraft

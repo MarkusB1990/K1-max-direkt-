@@ -1,10 +1,11 @@
 # Haken für Weihnachts-LED-Lichterketten
 
-Drei Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
+Vier Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
 
 | Datei | Wofür |
 |---|---|
 | `stl/dachrinnen-haken_wulst-18mm.stl` … `-24mm.stl` | Wird auf den vorderen Wulst einer **halbrunden Dachrinne** gesteckt |
+| `stl/zaunhaken-doppelstab_6-5-6.stl` / `_8-6-8.stl` | Wird von oben auf das waagerechte Drahtpaar eines **Doppelstabmattenzauns** gedrückt |
 | `stl/wandclip-schrauben_kabel-…mm.stl` | Clip zum **Anschrauben** an Holz (Balken, Verkleidung, Fensterrahmen) oder mit Dübel an die Fassade |
 | `stl/wandclip-kleben_kabel-…mm.stl` | Clip zum **Ankleben** mit doppelseitigem Outdoor-Klebeband (glatte Fassade, Fensterrahmen, Kunststoff) |
 
@@ -21,7 +22,7 @@ Die Haken sind mit **[SolidCraft](https://solidcraft.io)** (Version 0.49.1) geba
 
 ### Maße in SolidCraft ändern
 
-In der App: `.sc`-Datei öffnen, dann **Parameters** öffnen. Die wichtigsten Werte sind als Favoriten markiert, zum Beispiel `wulst_d`, `spiel` und `untergriff` beim Dachrinnen-Haken oder `kabel_d` und `oeffnung` beim Wandclip. Ändere einen Wert, und das Modell baut sich neu auf. Danach als STL exportieren.
+In der App: `.sc`-Datei öffnen, dann **Parameters** öffnen. Die wichtigsten Werte sind als Favoriten markiert, zum Beispiel `wulst_d`, `spiel` und `untergriff` beim Dachrinnen-Haken oder `kabel_d` und `oeffnung` beim Wandclip oder `draht_d` und `stab_d` beim Zaunhaken. Ändere einen Wert, und das Modell baut sich neu auf. Danach als STL exportieren.
 
 Auf der Kommandozeile geht es genauso:
 ```
@@ -45,7 +46,26 @@ Anbringen: das Bein zuerst innen in die Rinne einführen, dann den Haken vorne �
 
 Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` (siehe oben). Sitzt der Haken zu fest oder zu locker, kannst du `spiel` (Standard 0,6 mm) oder `untergriff` (Standard 40°) ändern.
 
-## 2. Wandclips (Schrauben oder Kleben)
+## 2. Zaunhaken für Doppelstabmatten
+
+![Zaunhaken im Querschnitt](vorschau/zaunhaken_profil.png)
+
+*Querschnitt: Der Haken (rot) umgreift beide waagerechten Drähte (grau). Das Kabel (blau) wird vorne von oben in die Kabelaufnahme eingeclipst.*
+
+- Der Bügel wird **von oben** auf das waagerechte Drahtpaar gedrückt und rastet unter beiden Drähten ein. Weil er beide Drähte umgreift, kann er sich nicht verdrehen und auch bei Wind nicht abrutschen.
+- Setz ihn **zwischen zwei senkrechte Stäbe**. Dort ist zwischen den Drähten Platz, und der Haken ist mit 10 mm Breite schmal genug.
+- Die Kabelaufnahme ist dieselbe wie beim Dachrinnen-Haken: Oben bleibt nur ein Spalt von ca. 2,4 mm, das Kabel rastet ein.
+
+**Die richtige Größe auswählen:** Doppelstabmatten gibt es meist in zwei Stärken. Die Zahlen stehen oft auf dem Etikett oder im Kaufbeleg, sonst miss die Drähte mit dem Messschieber.
+
+| Matte | Waagerechte Drähte | Senkrechte Stäbe | Datei |
+|---|---|---|---|
+| 6/5/6 (leicht, am häufigsten) | 6 mm | 5 mm | `zaunhaken-doppelstab_6-5-6.stl` |
+| 8/6/8 (schwer) | 8 mm | 6 mm | `zaunhaken-doppelstab_8-6-8.stl` |
+
+Für andere Maße änderst du in SolidCraft `draht_d` und `stab_d`. Bei dick pulverbeschichteten Zäunen kannst du `spiel` etwas erhöhen, zum Beispiel auf 0,8 mm. Sitzt der Haken zu locker, erhöhe `untergriff`.
+
+## 3. Wandclips (Schrauben oder Kleben)
 
 ![Clip im Querschnitt](vorschau/wandclip_profil.png)
 
@@ -86,7 +106,7 @@ Montage: Die Platte kommt so an die Wand, dass die Öffnung des Clips nach **obe
 | Einstellung | Wert |
 |---|---|
 | Material | **PETG** oder **ASA** (ASA ist am UV- und wetterfestesten, der geschlossene K1 Max druckt es gut). PLA wird draußen spröde und weich. |
-| Ausrichtung | So wie die STL geladen wird (Rinnenhaken liegt flach, Wandclip liegt auf der Platte) |
+| Ausrichtung | So wie die STL geladen wird (Rinnen- und Zaunhaken liegen flach, Wandclip liegt auf der Platte) |
 | Schichthöhe | 0,2 mm |
 | Wände | 4 |
 | Füllung | 40 % (die dünnen Teile werden ohnehin fast massiv) |
