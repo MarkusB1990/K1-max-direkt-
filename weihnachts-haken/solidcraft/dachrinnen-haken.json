@@ -7,7 +7,7 @@
   {"command": "parameters.add", "params": {"name": "bein", "expression": "14 mm", "comment": "Bein innen in der Rinne: Laenge unter Wulstmitte minus R"}},
   {"command": "parameters.add", "params": {"name": "abhang", "expression": "12 mm", "comment": "Kabel haengt so weit unter der Unterkante des Wulsts"}},
   {"command": "parameters.add", "params": {"name": "kabel_r", "expression": "3.5 mm", "comment": "Radius Kabelaufnahme (3.5 mm = Kabel bis ca. 6 mm)"}},
-  {"command": "parameters.add", "params": {"name": "haken_ende", "expression": "60 deg", "comment": "Bis zu diesem Winkel schliesst sich die Kabelaufnahme (mehr = haelt fester)"}},
+  {"command": "parameters.add", "params": {"name": "haken_ende", "expression": "85 deg", "comment": "Bis zu diesem Winkel schliesst sich die Kabelaufnahme: 85 deg laesst oben ca. 2,4 mm Spalt, das Kabel rastet ein und kann bei Wind nicht herausrutschen"}},
   {"command": "parameters.add", "params": {"name": "R", "expression": "wulst_d / 2 + spiel", "comment": "Innenradius Buegel"}},
   {"command": "parameters.add", "params": {"name": "Rm", "expression": "R + t / 2", "comment": "Mittellinie Buegel"}},
   {"command": "parameters.add", "params": {"name": "tief", "expression": "R + abhang", "comment": "Mitte Kabelaufnahme unter Wulstmitte"}},
