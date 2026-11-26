@@ -49,7 +49,7 @@ Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` 
 
 ![Clip im Querschnitt](vorschau/wandclip_profil.png)
 
-*Querschnitt: Das Kabel (blau) wird von vorne in den Clip gedrückt und rastet ein. Es ist rundum eingeschlossen und kann weder nach oben noch nach vorne herausrutschen.*
+*Seitenansicht, so wie der Clip an der Wand sitzt: Die Öffnung zeigt nach oben. Du drückst das Kabel (blau) von oben in den Clip, bis es einrastet. Weil die Öffnung schmaler ist als das Kabel, kann der Wind es nicht herausheben.*
 
 **Die richtige Größe auswählen:** Miss die Dicke des Kabels deiner Lichterkette und nimm die passende Datei:
 
@@ -61,7 +61,7 @@ Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` 
 
 Für jede andere Kabeldicke änderst du in SolidCraft `kabel_d` (Innendurchmesser) und `oeffnung`. Die Öffnung sollte etwa 1–1,5 mm schmaler sein als das Kabel. Lässt sich das Kabel schwer einclipsen, mach `wand` dünner (z. B. 1,6 mm) oder die `oeffnung` etwas breiter.
 
-Montage: Die Platte kommt so an die Wand, dass der Clip waagerecht liegt und das Kabel entlang der Wand läuft. Ein Clip alle 30–50 cm reicht.
+Montage: Die Platte kommt so an die Wand, dass die Öffnung des Clips nach **oben** zeigt (beim Schraub-Clip ist das Schraubenloch dann oben). Das Kabel läuft waagerecht an der Wand entlang. Ein Clip alle 30–50 cm reicht.
 
 ### Zum Schrauben (Holz / Fassade)
 
@@ -90,7 +90,7 @@ Montage: Die Platte kommt so an die Wand, dass der Clip waagerecht liegt und das
 | Schichthöhe | 0,2 mm |
 | Wände | 4 |
 | Füllung | 40 % (die dünnen Teile werden ohnehin fast massiv) |
-| Stützen | keine |
+| Stützen | keine (die kleine Lippe über der Clip-Öffnung überhängt nur ca. 2 mm; falls sie beim Drucken hängt, Stützen „nur auf Druckplatte“ einschalten) |
 | Brim | nicht nötig, bei ASA wegen Warping optional |
 
 Zeitaufwand: etwa 10–15 min pro Haken. Mehrere Haken passen gleichzeitig aufs Bett.

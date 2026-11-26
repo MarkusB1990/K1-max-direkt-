@@ -1,6 +1,6 @@
 {"commands": [
   {"command": "parameters.add", "params": {"name": "kabel_d", "expression": "5.2 mm", "comment": "Innendurchmesser Clip (= dickstes Kabel, das passt)", "favorite": true}},
-  {"command": "parameters.add", "params": {"name": "oeffnung", "expression": "2.6 mm", "comment": "Breite der Einrast-Oeffnung (kleiner als das Kabel = haelt bei Wind)", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "oeffnung", "expression": "2.6 mm", "comment": "Breite der Einrast-Oeffnung oben (kleiner als das Kabel = haelt bei Wind)", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "platte_b", "expression": "24 mm", "comment": "Breite der Grundplatte", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "platte_h", "expression": "40 mm", "comment": "Hoehe der Grundplatte (an der Wand)", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "platte_t", "expression": "4 mm", "comment": "Dicke der Grundplatte"}},
@@ -13,7 +13,7 @@
   {"command": "parameters.add", "params": {"name": "Ro", "expression": "Ri + wand", "comment": "Aussenradius Clip"}},
   {"command": "parameters.add", "params": {"name": "yc", "expression": "platte_h / 2", "comment": "Lage des Clips auf der Platte (Mitte, von unten)"}},
   {"command": "parameters.add", "params": {"name": "zc", "expression": "platte_t + sockel + Ro", "comment": "Abstand Clip-Mitte von der Wand"}},
-  {"command": "parameters.add", "params": {"name": "zn", "expression": "zc + sqrt(Ri * Ri - oeffnung * oeffnung / 4)", "comment": "Hoehe der engsten Stelle der Oeffnung"}},
+  {"command": "parameters.add", "params": {"name": "yn", "expression": "yc + sqrt(Ri * Ri - oeffnung * oeffnung / 4)", "comment": "Lage der engsten Stelle der Oeffnung (oben)"}},
   {"command": "sketch.create", "params": {"plane": "XY", "name": "Grundplatte"}},
   {"command": "sketch.rectangle.rounded", "params": {"p0": [0, 0], "p1": ["platte_b", "platte_h"], "radius": "3 mm"}},
   {"command": "sketch.finish", "params": {}},
@@ -25,7 +25,7 @@
   {"command": "solid.extrude", "params": {"distance": "clip_b", "operation": "join", "touching": "one_body", "targets": ["Wandclip"], "name": "Clip"}},
   {"command": "sketch.create", "params": {"plane": "YZ", "offset": "(platte_b - clip_b) / 2", "name": "Kabelloch mit Oeffnung"}},
   {"command": "sketch.circle.center", "params": {"center": ["yc", "zc"], "radius": "Ri"}},
-  {"command": "sketch.line", "params": {"closed": true, "points": [["yc - oeffnung / 2", "zc"], ["yc + oeffnung / 2", "zc"], ["yc + oeffnung / 2", "zn + 0.4 mm"], ["yc + oeffnung / 2 + fase", "zc + Ro + 0.5 mm"], ["yc - oeffnung / 2 - fase", "zc + Ro + 0.5 mm"], ["yc - oeffnung / 2", "zn + 0.4 mm"]]}},
+  {"command": "sketch.line", "params": {"closed": true, "points": [["yc", "zc - oeffnung / 2"], ["yn + 0.4 mm", "zc - oeffnung / 2"], ["yc + Ro + 0.5 mm", "zc - oeffnung / 2 - fase"], ["yc + Ro + 0.5 mm", "zc + oeffnung / 2 + fase"], ["yn + 0.4 mm", "zc + oeffnung / 2"], ["yc", "zc + oeffnung / 2"]]}},
   {"command": "sketch.finish", "params": {}},
   {"command": "solid.extrude", "params": {"distance": "clip_b", "operation": "cut", "targets": ["Wandclip"], "name": "Kabelloch mit Oeffnung"}}
 ]}
