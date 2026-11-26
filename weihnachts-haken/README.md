@@ -38,7 +38,7 @@ Mit `solidcraft-cli run solidcraft/dachrinnen-haken.json --save dachrinnen-haken
 
 - Der Bügel greift über den Wulst und ein Stück darunter, damit Wind ihn nicht abhebt.
 - Das hintere Bein hängt **innen** in der Rinne und stützt sich an der Rinnenwand ab. Dadurch kann sich der Haken durch das Gewicht der Kette nicht nach vorne drehen.
-- Die Kette wird vorne unten in den Haken **eingeclipst**. Oben bleibt nur ein Spalt von ca. 2,4 mm, deshalb kann der Wind das Kabel nicht heraushebeln. Das hält bei Kabeln ab etwa 3 mm. Für dünnere Kabel stellst du `haken_ende` höher ein, zum Beispiel 95°.
+- Die Kette wird vorne unten in den Haken **eingeclipst**. Die Kabelaufnahme ist für **3-mm-Kabel** gemacht (Innen-Ø 3,6 mm). Oben bleibt nur ein Spalt von ca. 2,1 mm, deshalb kann der Wind das Kabel nicht heraushebeln. Für ein anderes Kabel änderst du in SolidCraft `kabel_r` (Radius der Aufnahme) und `haken_ende` (je größer, desto schmaler der Spalt).
 
 **Die richtige Größe auswählen:** Miss den Durchmesser des Wulsts (die eingerollte Kante vorne an der Rinne) mit einem Messschieber und nimm die STL, die am nächsten liegt (18 / 20 / 22 / 24 mm). Bei den gängigen Rinnen NW 280/333 liegt der Wulst meist bei 18–22 mm. Wenn du unsicher bist, druck zuerst einen Testhaken.
 
@@ -54,7 +54,7 @@ Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` 
 
 - Der Bügel wird **von oben** auf das waagerechte Drahtpaar gedrückt und rastet unter beiden Drähten ein. Weil er beide Drähte umgreift, kann er sich nicht verdrehen und auch bei Wind nicht abrutschen.
 - Setz ihn **zwischen zwei senkrechte Stäbe**. Dort ist zwischen den Drähten Platz, und der Haken ist mit 10 mm Breite schmal genug.
-- Die Kabelaufnahme ist dieselbe wie beim Dachrinnen-Haken: Oben bleibt nur ein Spalt von ca. 2,4 mm, das Kabel rastet ein.
+- Die Kabelaufnahme ist wie beim Dachrinnen-Haken für **3-mm-Kabel** gemacht. Oben bleibt nur ein Spalt von ca. 2,1 mm, das Kabel rastet ein.
 
 **Die richtige Größe auswählen:** Miss mit der Schublehre die **Gesamtbreite über beide waagerechten Drähte**, also genau da, wo der Haken einrastet.
 
@@ -76,7 +76,7 @@ Für andere Maße änderst du in SolidCraft `gesamt_b` (Gesamtbreite) und `draht
 
 | Kabeldicke | Datei-Endung | Innen-Ø | Öffnung |
 |---|---|---|---|
-| 2–3 mm | `_kabel-2-3mm.stl` | 3,4 mm | 1,6 mm |
+| 2–3 mm (passt für 3-mm-Kabel) | `_kabel-2-3mm.stl` | 3,4 mm | 1,6 mm |
 | 3–5 mm | `_kabel-3-5mm.stl` | 5,2 mm | 2,6 mm |
 | 5–7 mm | `_kabel-5-7mm.stl` | 7,2 mm | 4,0 mm |
 
