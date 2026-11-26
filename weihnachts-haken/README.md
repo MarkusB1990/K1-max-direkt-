@@ -5,7 +5,7 @@ Vier Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
 | Datei | Wofür |
 |---|---|
 | `stl/dachrinnen-haken_wulst-18mm.stl` … `-24mm.stl` | Wird auf den vorderen Wulst einer **halbrunden Dachrinne** gesteckt |
-| `stl/zaunhaken-doppelstab_6-5-6.stl` / `_8-6-8.stl` | Wird von oben auf das waagerechte Drahtpaar eines **Doppelstabmattenzauns** gedrückt |
+| `stl/zaunhaken-doppelstab_15mm.stl` (17 mm, 22 mm) | Wird von oben auf das waagerechte Drahtpaar eines **Doppelstabmattenzauns** gedrückt |
 | `stl/wandclip-schrauben_kabel-…mm.stl` | Clip zum **Anschrauben** an Holz (Balken, Verkleidung, Fensterrahmen) oder mit Dübel an die Fassade |
 | `stl/wandclip-kleben_kabel-…mm.stl` | Clip zum **Ankleben** mit doppelseitigem Outdoor-Klebeband (glatte Fassade, Fensterrahmen, Kunststoff) |
 
@@ -56,14 +56,15 @@ Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` 
 - Setz ihn **zwischen zwei senkrechte Stäbe**. Dort ist zwischen den Drähten Platz, und der Haken ist mit 10 mm Breite schmal genug.
 - Die Kabelaufnahme ist dieselbe wie beim Dachrinnen-Haken: Oben bleibt nur ein Spalt von ca. 2,4 mm, das Kabel rastet ein.
 
-**Die richtige Größe auswählen:** Doppelstabmatten gibt es meist in zwei Stärken. Die Zahlen stehen oft auf dem Etikett oder im Kaufbeleg, sonst miss die Drähte mit dem Messschieber.
+**Die richtige Größe auswählen:** Miss mit der Schublehre die **Gesamtbreite über beide waagerechten Drähte**, also genau da, wo der Haken einrastet.
 
-| Matte | Waagerechte Drähte | Senkrechte Stäbe | Datei |
-|---|---|---|---|
-| 6/5/6 (leicht, am häufigsten) | 6 mm | 5 mm | `zaunhaken-doppelstab_6-5-6.stl` |
-| 8/6/8 (schwer) | 8 mm | 6 mm | `zaunhaken-doppelstab_8-6-8.stl` |
+| Gesamtbreite | Typische Matte | Datei |
+|---|---|---|
+| **15 mm** | leichte Matte, z. B. 5/4/5 (oder 6/5/6 mit dünnen Drähten) | `zaunhaken-doppelstab_15mm.stl` |
+| 17 mm | 6/5/6 | `zaunhaken-doppelstab_17mm.stl` |
+| 22 mm | 8/6/8 | `zaunhaken-doppelstab_22mm.stl` |
 
-Für andere Maße änderst du in SolidCraft `draht_d` und `stab_d`. Bei dick pulverbeschichteten Zäunen kannst du `spiel` etwas erhöhen, zum Beispiel auf 0,8 mm. Sitzt der Haken zu locker, erhöhe `untergriff`.
+Für andere Maße änderst du in SolidCraft `gesamt_b` (Gesamtbreite) und `draht_d` (Dicke eines einzelnen waagerechten Drahts). Der Haken hat 0,5 mm Spiel pro Seite (`spiel`). Sitzt er zu stramm, erhöhe `spiel`, zum Beispiel auf 0,8 mm. Sitzt er zu locker, erhöhe `untergriff`.
 
 ## 3. Wandclips (Schrauben oder Kleben)
 

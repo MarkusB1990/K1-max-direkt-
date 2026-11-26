@@ -1,6 +1,6 @@
 {"commands": [
-  {"command": "parameters.add", "params": {"name": "draht_d", "expression": "6 mm", "comment": "Durchmesser der waagerechten Draehte (Matte 6/5/6: 6 mm, 8/6/8: 8 mm)", "favorite": true}},
-  {"command": "parameters.add", "params": {"name": "stab_d", "expression": "5 mm", "comment": "Durchmesser der senkrechten Staebe (Matte 6/5/6: 5 mm, 8/6/8: 6 mm)", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "draht_d", "expression": "5 mm", "comment": "Dicke EINES waagerechten Drahts (mit Schublehre messen)", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "gesamt_b", "expression": "15 mm", "comment": "Gesamtbreite ueber beide waagerechten Draehte (mit Schublehre messen)", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "spiel", "expression": "0.5 mm", "comment": "Spiel um die Draehte (bei dicker Beschichtung etwas mehr)", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "untergriff", "expression": "50 deg", "comment": "Wie weit der Buegel unter die Draehte greift (mehr = fester)", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "t", "expression": "2.5 mm", "comment": "Materialstaerke"}},
@@ -10,7 +10,7 @@
   {"command": "parameters.add", "params": {"name": "haken_ende", "expression": "85 deg", "comment": "Bis zu diesem Winkel schliesst sich die Kabelaufnahme (85 deg = ca. 2,4 mm Spalt oben)"}},
   {"command": "parameters.add", "params": {"name": "R", "expression": "draht_d / 2 + spiel", "comment": "Innenradius um einen Draht"}},
   {"command": "parameters.add", "params": {"name": "Rm", "expression": "R + t / 2", "comment": "Mittellinie"}},
-  {"command": "parameters.add", "params": {"name": "a", "expression": "(stab_d + draht_d) / 2", "comment": "Abstand Drahtmitte von Mattenmitte"}},
+  {"command": "parameters.add", "params": {"name": "a", "expression": "(gesamt_b - draht_d) / 2", "comment": "Abstand Drahtmitte von Mattenmitte"}},
   {"command": "parameters.add", "params": {"name": "tief", "expression": "R + abhang", "comment": "Mitte Kabelaufnahme unter Drahtmitte"}},
   {"command": "parameters.add", "params": {"name": "kx", "expression": "a + R + t + kabel_r", "comment": "Mitte Kabelaufnahme (x)"}},
   {"command": "parameters.add", "params": {"name": "L", "expression": "4 * (a + R)", "comment": "Hilfsmass fuer Schnitte"}},
