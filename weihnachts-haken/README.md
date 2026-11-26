@@ -60,8 +60,8 @@ Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` 
 
 | Gesamtbreite | Typische Matte | Datei |
 |---|---|---|
-| **15 mm** | leichte Matte, z. B. 5/4/5 (oder 6/5/6 mit dünnen Drähten) | `zaunhaken-doppelstab_15mm.stl` |
-| 17 mm | 6/5/6 | `zaunhaken-doppelstab_17mm.stl` |
+| **15 mm** | 6/5/6, bei der die waagerechten 6-mm-Drähte an den Schweißpunkten eingedrückt sind | `zaunhaken-doppelstab_15mm.stl` |
+| 17 mm | 6/5/6 (Drähte nicht eingedrückt) | `zaunhaken-doppelstab_17mm.stl` |
 | 22 mm | 8/6/8 | `zaunhaken-doppelstab_22mm.stl` |
 
 Für andere Maße änderst du in SolidCraft `gesamt_b` (Gesamtbreite) und `draht_d` (Dicke eines einzelnen waagerechten Drahts). Der Haken hat 0,5 mm Spiel pro Seite (`spiel`). Sitzt er zu stramm, erhöhe `spiel`, zum Beispiel auf 0,8 mm. Sitzt er zu locker, erhöhe `untergriff`.
