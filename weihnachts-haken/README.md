@@ -71,11 +71,11 @@ Für andere Maße änderst du in SolidCraft `gesamt_b` (Gesamtbreite) und `draht
 
 ![Blechclip im Querschnitt](vorschau/blechclip_profil.png)
 
-*Querschnitt: Der Clip wird von unten auf die nach unten zeigende Blechkante gesteckt. Oben ist der Schlitz enger als das Blech, deshalb federn die Schenkel auf und klemmen das Blech fest. Unten wird das Kabel von oben eingeclipst.*
+*Querschnitt: Der Clip wird **von oben** auf die Blechkante gesteckt. Unten am Schlitz ist er enger als das Blech, deshalb federn die Schenkel auf und klemmen das Blech fest. Seitlich wird das Kabel von oben eingeclipst.*
 
-- Für Blechkanten, die nach unten umgebogen sind, zum Beispiel an Mauerabdeckungen, Ortgang- oder Attikablechen.
-- Oben im Schlitz ist eine Einführschräge, darunter die Klemmstelle mit **0,6 mm Vorspannung** (`klemm`). Weiter unten hat der Schlitz etwas Luft, damit die Schenkel federn können.
-- Der Clip wird **15 mm** weit auf das Blech geschoben (`tiefe`).
+- Für umgebogene Blechkanten, auf die man den Clip von oben stecken kann.
+- Unten am Schlitz ist eine Einführschräge, direkt darüber die Klemmstelle mit **0,6 mm Vorspannung** (`klemm`). Weiter oben hat der Schlitz etwas Luft, damit die Schenkel federn können.
+- Der Clip wird **15 mm** weit auf das Blech geschoben (`tiefe`). Die Kabelaufnahme sitzt außen am vorderen Schenkel, unten bündig mit dem Clip.
 - Die Kabelaufnahme ist für **3-mm-Kabel** gemacht. Oben bleibt nur ein Spalt von ca. 2,1 mm, das Kabel rastet ein.
 
 **Die richtige Größe auswählen:** Miss die Dicke der umgebogenen Kante mit der Schublehre.
