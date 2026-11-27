@@ -6,7 +6,7 @@ Fünf Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
 |---|---|
 | `stl/dachrinnen-haken_wulst-18mm.stl` … `-24mm.stl` | Wird auf den vorderen Wulst einer **halbrunden Dachrinne** gesteckt |
 | `stl/zaunhaken-doppelstab_14mm.stl` (17 mm, 22 mm) | Wird von oben auf das waagerechte Drahtpaar eines **Doppelstabmattenzauns** gedrückt |
-| `stl/blechclip_4mm.stl` (3,5 mm, 4,5 mm) | Wird auf eine **umgebogene Blechkante** gesteckt und klemmt sich fest |
+| `stl/blechclip_5mm.stl` (4,5 mm, 5,5 mm) | Wird auf eine **umgebogene Blechkante** gesteckt und klemmt sich fest |
 | `stl/wandclip-schrauben_kabel-…mm.stl` | Clip zum **Anschrauben** an Holz (Balken, Verkleidung, Fensterrahmen) oder mit Dübel an die Fassade |
 | `stl/wandclip-kleben_kabel-…mm.stl` | Clip zum **Ankleben** mit doppelseitigem Outdoor-Klebeband (glatte Fassade, Fensterrahmen, Kunststoff) |
 
@@ -82,9 +82,9 @@ Für andere Maße änderst du in SolidCraft `gesamt_b` (Gesamtbreite) und `draht
 
 | Blechkante | Datei |
 |---|---|
-| ca. 3,5 mm | `blechclip_3,5mm.stl` |
-| **ca. 4 mm** | `blechclip_4mm.stl` |
 | ca. 4,5 mm | `blechclip_4,5mm.stl` |
+| **ca. 5 mm** | `blechclip_5mm.stl` |
+| ca. 5,5 mm | `blechclip_5,5mm.stl` |
 
 Hält der Clip zu locker, erhöhe in SolidCraft `klemm`, zum Beispiel auf 1 mm. Geht er zu schwer drauf, verringere `klemm`. Bei glattem, lackiertem Blech kannst du zusätzlich einen kleinen Streifen Outdoor-Klebeband in den Schlitz kleben.
 

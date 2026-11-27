@@ -1,5 +1,5 @@
 {"commands": [
-  {"command": "parameters.add", "params": {"name": "blech_d", "expression": "4 mm", "comment": "Dicke der umgebogenen Blechkante (mit Schublehre messen)", "favorite": true}},
+  {"command": "parameters.add", "params": {"name": "blech_d", "expression": "5 mm", "comment": "Dicke der umgebogenen Blechkante (mit Schublehre messen)", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "klemm", "expression": "0.6 mm", "comment": "Vorspannung: so viel enger als das Blech ist der Clip an der Klemmstelle (mehr = haelt fester)", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "tiefe", "expression": "15 mm", "comment": "Wie weit der Clip von oben auf das Blech geschoben wird", "favorite": true}},
   {"command": "parameters.add", "params": {"name": "t", "expression": "2.5 mm", "comment": "Staerke der Schenkel"}},
