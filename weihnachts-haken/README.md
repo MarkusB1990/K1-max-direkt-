@@ -1,11 +1,12 @@
 # Haken für Weihnachts-LED-Lichterketten
 
-Vier Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
+Fünf Haken-Typen zum Drucken auf dem K1 Max, alle ohne Stützstrukturen:
 
 | Datei | Wofür |
 |---|---|
 | `stl/dachrinnen-haken_wulst-18mm.stl` … `-24mm.stl` | Wird auf den vorderen Wulst einer **halbrunden Dachrinne** gesteckt |
 | `stl/zaunhaken-doppelstab_14mm.stl` (17 mm, 22 mm) | Wird von oben auf das waagerechte Drahtpaar eines **Doppelstabmattenzauns** gedrückt |
+| `stl/blechclip_4mm.stl` (3,5 mm, 4,5 mm) | Wird auf eine **umgebogene Blechkante** gesteckt und klemmt sich fest |
 | `stl/wandclip-schrauben_kabel-…mm.stl` | Clip zum **Anschrauben** an Holz (Balken, Verkleidung, Fensterrahmen) oder mit Dübel an die Fassade |
 | `stl/wandclip-kleben_kabel-…mm.stl` | Clip zum **Ankleben** mit doppelseitigem Outdoor-Klebeband (glatte Fassade, Fensterrahmen, Kunststoff) |
 
@@ -22,7 +23,7 @@ Die Haken sind mit **[SolidCraft](https://solidcraft.io)** (Version 0.49.1) geba
 
 ### Maße in SolidCraft ändern
 
-In der App: `.sc`-Datei öffnen, dann **Parameters** öffnen. Die wichtigsten Werte sind als Favoriten markiert, zum Beispiel `wulst_d`, `spiel` und `untergriff` beim Dachrinnen-Haken oder `kabel_d` und `oeffnung` beim Wandclip oder `gesamt_b` und `draht_d` beim Zaunhaken. Ändere einen Wert, und das Modell baut sich neu auf. Danach als STL exportieren.
+In der App: `.sc`-Datei öffnen, dann **Parameters** öffnen. Die wichtigsten Werte sind als Favoriten markiert, zum Beispiel `wulst_d`, `spiel` und `untergriff` beim Dachrinnen-Haken oder `kabel_d` und `oeffnung` beim Wandclip oder `gesamt_b` und `draht_d` beim Zaunhaken oder `blech_d` und `klemm` beim Blechclip. Ändere einen Wert, und das Modell baut sich neu auf. Danach als STL exportieren.
 
 Auf der Kommandozeile geht es genauso:
 ```
@@ -66,7 +67,28 @@ Für eine andere Wulstgröße änderst du in SolidCraft den Parameter `wulst_d` 
 
 Für andere Maße änderst du in SolidCraft `gesamt_b` (Gesamtbreite) und `draht_d` (Dicke eines einzelnen waagerechten Drahts). Der Haken hat 0,5 mm Spiel pro Seite (`spiel`) und greift 60° unter die Drähte (`untergriff`). Sitzt er zu stramm, erhöhe `spiel`, zum Beispiel auf 0,8 mm. Sitzt er zu locker, erhöhe `untergriff`.
 
-## 3. Wandclips (Schrauben oder Kleben)
+## 3. Blechclip für umgebogene Blechkanten
+
+![Blechclip im Querschnitt](vorschau/blechclip_profil.png)
+
+*Querschnitt: Der Clip wird von unten auf die nach unten zeigende Blechkante gesteckt. Oben ist der Schlitz enger als das Blech, deshalb federn die Schenkel auf und klemmen das Blech fest. Unten wird das Kabel von oben eingeclipst.*
+
+- Für Blechkanten, die nach unten umgebogen sind, zum Beispiel an Mauerabdeckungen, Ortgang- oder Attikablechen.
+- Oben im Schlitz ist eine Einführschräge, darunter die Klemmstelle mit **0,6 mm Vorspannung** (`klemm`). Weiter unten hat der Schlitz etwas Luft, damit die Schenkel federn können.
+- Der Clip wird **15 mm** weit auf das Blech geschoben (`tiefe`).
+- Die Kabelaufnahme ist für **3-mm-Kabel** gemacht. Oben bleibt nur ein Spalt von ca. 2,1 mm, das Kabel rastet ein.
+
+**Die richtige Größe auswählen:** Miss die Dicke der umgebogenen Kante mit der Schublehre.
+
+| Blechkante | Datei |
+|---|---|
+| ca. 3,5 mm | `blechclip_3,5mm.stl` |
+| **ca. 4 mm** | `blechclip_4mm.stl` |
+| ca. 4,5 mm | `blechclip_4,5mm.stl` |
+
+Hält der Clip zu locker, erhöhe in SolidCraft `klemm`, zum Beispiel auf 1 mm. Geht er zu schwer drauf, verringere `klemm`. Bei glattem, lackiertem Blech kannst du zusätzlich einen kleinen Streifen Outdoor-Klebeband in den Schlitz kleben.
+
+## 4. Wandclips (Schrauben oder Kleben)
 
 ![Clip im Querschnitt](vorschau/wandclip_profil.png)
 
@@ -107,7 +129,7 @@ Montage: Die Platte kommt so an die Wand, dass die Öffnung des Clips nach **obe
 | Einstellung | Wert |
 |---|---|
 | Material | **PETG** oder **ASA** (ASA ist am UV- und wetterfestesten, der geschlossene K1 Max druckt es gut). PLA wird draußen spröde und weich. |
-| Ausrichtung | So wie die STL geladen wird (Rinnen- und Zaunhaken liegen flach, Wandclip liegt auf der Platte) |
+| Ausrichtung | So wie die STL geladen wird (Rinnen-, Zaunhaken und Blechclip liegen flach, Wandclip liegt auf der Platte) |
 | Schichthöhe | 0,2 mm |
 | Wände | 4 |
 | Füllung | 40 % (die dünnen Teile werden ohnehin fast massiv) |
